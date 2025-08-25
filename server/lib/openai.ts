@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using DeepSeek API which provides OpenAI-compatible endpoints with advanced AI capabilities
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || ""
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: 'https://api.deepseek.com'
 });
 
 export interface GenerateAdCopyRequest {
@@ -54,7 +55,7 @@ Respond with JSON in this format:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "deepseek-chat",
       messages: [
         {
           role: "system",
@@ -290,7 +291,7 @@ Respond with JSON in this format:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      model: "deepseek-chat", // Using DeepSeek's advanced chat model for fashion marketing content generation
       messages: [
         {
           role: "system",
@@ -349,7 +350,7 @@ Respond with JSON in this format:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "deepseek-chat",
       messages: [
         {
           role: "system",
