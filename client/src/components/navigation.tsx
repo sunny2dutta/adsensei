@@ -1,10 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Wand2, Plus, User } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Wand2, Plus, User, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Navigation() {
   const [location, navigate] = useLocation();
+  const { logout } = useAuth();
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
@@ -54,11 +57,21 @@ export default function Navigation() {
               <Plus className="mr-2 h-4 w-4" />
               New Campaign
             </Button>
-            <Avatar>
-              <AvatarFallback className="bg-coral text-white">
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer">
+                  <AvatarFallback className="bg-coral text-white">
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { logout(); navigate("/login"); }}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

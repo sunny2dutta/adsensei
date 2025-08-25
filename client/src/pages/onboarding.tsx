@@ -79,6 +79,8 @@ export default function Onboarding() {
     onSuccess: () => {
       setAccountCreated(true);
       setCurrentStep(5); // Move to campaign suggestions step
+      // Set authentication state
+      localStorage.setItem('isAuthenticated', 'true');
       toast({
         title: "Welcome to StyleAI!",
         description: "Your account has been created successfully. Now let's create your first campaign suggestions!",
