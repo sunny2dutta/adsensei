@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateAdCopy, generateCampaignInsights } from "./lib/openai";
+import { generateInstagramAuthUrl, exchangeCodeForToken, publishToInstagram, getInstagramAccount, formatInstagramCaption, validateImageUrl } from "./lib/instagram";
 import { insertCampaignSchema, insertMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -75,6 +76,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(campaign);
     } catch (error) {
       res.status(500).json({ message: "Error updating campaign" });
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const user = await storage.updateUser(req.params.id, updates);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating user" });
     }
   });
 
@@ -217,6 +231,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(message);
     } catch (error) {
       res.status(400).json({ message: "Invalid message data" });
+    }
+  });
+
+  // Instagram Integration Routes
+  app.get("/api/instagram/auth-url/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const authData = generateInstagramAuthUrl(userId);
+      res.json(authData);
+    } catch (error) {
+      res.status(500).json({ message: "Error generating Instagram auth URL" });
+    }
+  });
+
+  app.post("/api/instagram/callback", async (req, res) => {
+    try {
+      const { code, state } = req.body;
+      const userId = state.split('_')[0];
+
+      const tokenData = await exchangeCodeForToken(code);
+      const accountData = await getInstagramAccount(tokenData.access_token);
+
+      await storage.updateUser(userId, {
+        instagramConnected: true,
+        instagramAccessToken: tokenData.access_token,
+        instagramAccountId: accountData.id
+      });
+
+      res.json({ 
+        message: "Instagram connected successfully",
+        accountId: accountData.id,
+        username: accountData.username
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error connecting Instagram account" });
+    }
+  });
+
+  app.post("/api/campaigns/:id/publish-instagram", async (req, res) => {
+    try {
+      const campaign = await storage.getCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      const user = await storage.getUser(campaign.userId);
+      if (!user || !user.instagramConnected || !user.instagramAccessToken) {
+        return res.status(400).json({ message: "Instagram not connected for this user" });
+      }
+
+      if (!campaign.imageUrl || !validateImageUrl(campaign.imageUrl)) {
+        return res.status(400).json({ message: "Valid image URL required for Instagram post" });
+      }
+
+      // Generate Instagram caption from campaign content
+      const adCopyData = campaign.adCopy ? JSON.parse(campaign.adCopy) : null;
+      let caption = campaign.description || "New fashion collection available now!";
+      
+      if (adCopyData) {
+        caption = formatInstagramCaption(
+          adCopyData.headline || "",
+          adCopyData.body || "",
+          adCopyData.cta || "",
+          adCopyData.hashtags || []
+        );
+      }
+
+      const publishResult = await publishToInstagram({
+        caption,
+        image_url: campaign.imageUrl,
+        access_token: user.instagramAccessToken
+      });
+
+      // Update campaign with Instagram post details
+      await storage.updateCampaign(req.params.id, {
+        publishedToInstagram: true,
+        instagramPostId: publishResult.id,
+        status: "published"
+      });
+
+      res.json({
+        message: "Campaign published to Instagram successfully",
+        postId: publishResult.id,
+        permalink: publishResult.permalink
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error publishing to Instagram: " + (error as Error).message });
+    }
+  });
+
+  app.post("/api/instagram/disconnect/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      await storage.updateUser(userId, {
+        instagramConnected: false,
+        instagramAccessToken: null,
+        instagramAccountId: null
+      });
+
+      res.json({ message: "Instagram disconnected successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error disconnecting Instagram account" });
     }
   });
 

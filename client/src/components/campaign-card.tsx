@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Edit, Trash2, Play, Pause } from "lucide-react";
+import { Eye, Edit, Trash2, Play, Pause, Instagram, ExternalLink } from "lucide-react";
 import { Campaign } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -10,6 +13,7 @@ interface CampaignCardProps {
   onEdit?: (campaign: Campaign) => void;
   onDelete?: (campaign: Campaign) => void;
   onToggleStatus?: (campaign: Campaign) => void;
+  userInstagramConnected?: boolean;
 }
 
 export default function CampaignCard({ 
@@ -17,17 +21,43 @@ export default function CampaignCard({
   onView, 
   onEdit, 
   onDelete, 
-  onToggleStatus 
+  onToggleStatus,
+  userInstagramConnected = false
 }: CampaignCardProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active": return "bg-green-100 text-green-800";
       case "pending": return "bg-golden/20 text-golden";
       case "draft": return "bg-gray-100 text-gray-800";
       case "completed": return "bg-blue-100 text-blue-800";
+      case "published": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  // Instagram publishing mutation
+  const publishToInstagramMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/campaigns/${campaign.id}/publish-instagram`, {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      toast({
+        title: "Published to Instagram!",
+        description: "Your campaign has been published to Instagram successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Publishing Failed",
+        description: error.message || "Failed to publish to Instagram",
+      });
+    },
+  });
 
   const getPlatformColor = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -142,7 +172,55 @@ export default function CampaignCard({
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
+          
+          {/* Instagram Publishing Button */}
+          {userInstagramConnected && campaign.platform === "instagram" && !campaign.publishedToInstagram && campaign.imageUrl && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => publishToInstagramMutation.mutate()}
+              disabled={publishToInstagramMutation.isPending}
+              className="text-pink-600 border-pink-200 hover:bg-pink-50"
+              data-testid={`button-publish-instagram-${campaign.id}`}
+            >
+              <Instagram className="h-4 w-4 mr-1" />
+              {publishToInstagramMutation.isPending ? "Publishing..." : "Publish"}
+            </Button>
+          )}
+          
+          {/* Instagram Post Link */}
+          {campaign.publishedToInstagram && campaign.instagramPostId && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(`https://www.instagram.com/p/${campaign.instagramPostId}/`, '_blank')}
+              className="text-pink-600 border-pink-200 hover:bg-pink-50"
+              data-testid={`button-view-instagram-${campaign.id}`}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />
+              View Post
+            </Button>
+          )}
         </div>
+        
+        {/* Instagram Status */}
+        {campaign.platform === "instagram" && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-charcoal/60">Instagram:</span>
+              {campaign.publishedToInstagram ? (
+                <Badge className="bg-green-100 text-green-800">
+                  <Instagram className="h-3 w-3 mr-1" />
+                  Published
+                </Badge>
+              ) : userInstagramConnected ? (
+                <Badge className="bg-blue-100 text-blue-800">Ready to publish</Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-600">Connect Instagram</Badge>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

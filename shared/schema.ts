@@ -10,6 +10,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   companyName: text("company_name"),
   brandType: text("brand_type"), // luxury, sustainable, streetwear, etc.
+  instagramConnected: boolean("instagram_connected").default(false),
+  instagramAccessToken: text("instagram_access_token"),
+  instagramAccountId: text("instagram_account_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -19,13 +22,16 @@ export const campaigns = pgTable("campaigns", {
   name: text("name").notNull(),
   description: text("description"),
   platform: text("platform").notNull(), // facebook, instagram, tiktok, etc.
-  status: text("status").notNull().default("draft"), // draft, pending, approved, active, completed
+  status: text("status").notNull().default("draft"), // draft, pending, approved, active, completed, published
   budget: integer("budget"), // in cents
   targetAudience: text("target_audience"),
   adCopy: text("ad_copy"),
   imageUrl: text("image_url"),
   expectedReach: text("expected_reach"),
   duration: integer("duration"), // in days
+  publishedToInstagram: boolean("published_to_instagram").default(false),
+  instagramPostId: text("instagram_post_id"),
+  scheduledPublishDate: timestamp("scheduled_publish_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

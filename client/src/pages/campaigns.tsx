@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCampaignSchema, type Campaign, type InsertCampaign } from "@shared/schema";
+import { insertCampaignSchema, type Campaign, type InsertCampaign, type User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import CampaignCard from "@/components/campaign-card";
-import { Plus, Search, Filter } from "lucide-react";
+import InstagramConnect from "@/components/instagram-connect";
+import { Plus, Search, Filter, Instagram } from "lucide-react";
 
 export default function Campaigns() {
   const { toast } = useToast();
@@ -24,12 +25,23 @@ export default function Campaigns() {
   // Mock user ID - in real app this would come from auth context
   const userId = "mock-user-id";
 
-  const { data: campaigns = [], isLoading } = useQuery({
+  const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns", userId],
     queryFn: async () => {
       const response = await fetch(`/api/campaigns?userId=${userId}`);
       if (!response.ok) throw new Error("Failed to fetch campaigns");
-      return response.json() as Campaign[];
+      return response.json();
+    },
+  });
+
+  // Get user data to check Instagram connection status
+  const { data: user } = useQuery<User>({
+    queryKey: ['/api/users', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) throw new Error("Failed to fetch user");
+      return response.json();
     },
   });
 
@@ -214,7 +226,7 @@ export default function Campaigns() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} data-testid="textarea-campaign-description" />
+                        <Textarea {...field} value={field.value || ""} data-testid="textarea-campaign-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -266,7 +278,7 @@ export default function Campaigns() {
                       <FormItem>
                         <FormLabel>Expected Reach</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., 10K-25K" data-testid="input-campaign-reach" />
+                          <Input {...field} value={field.value || ""} placeholder="e.g., 10K-25K" data-testid="input-campaign-reach" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -280,7 +292,20 @@ export default function Campaigns() {
                     <FormItem>
                       <FormLabel>Target Audience</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Women 25-40, Fashion enthusiasts" data-testid="input-campaign-audience" />
+                        <Input {...field} value={field.value || ""} placeholder="e.g., Women 25-40, Fashion enthusiasts" data-testid="input-campaign-audience" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} placeholder="https://example.com/image.jpg" data-testid="input-campaign-image" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -310,6 +335,11 @@ export default function Campaigns() {
         </Dialog>
       </div>
 
+      {/* Instagram Integration */}
+      <div className="mb-6">
+        <InstagramConnect userId={userId} />
+      </div>
+
       {/* Filters */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="flex-1 relative">
@@ -332,6 +362,7 @@ export default function Campaigns() {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -357,6 +388,7 @@ export default function Campaigns() {
               campaign={campaign}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
+              userInstagramConnected={user?.instagramConnected || false}
             />
           ))}
         </div>
