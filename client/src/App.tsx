@@ -53,15 +53,11 @@ function Router() {
         </Route>
         <Route path="/onboarding" component={Onboarding} />
         
-        {/* Homepage - visible to all, functionality protected */}
+        {/* Homepage - visible to all, functionality protected within components */}
         <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
         
         {/* Protected routes */}
-        <Route path="/dashboard">
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        </Route>
         <Route path="/campaigns">
           <ProtectedRoute>
             <Campaigns />

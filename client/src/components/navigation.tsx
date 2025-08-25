@@ -17,6 +17,8 @@ export default function Navigation() {
     { href: "/clients", label: "Clients" },
   ];
 
+  const { isAuthenticated } = useAuth();
+
   return (
     <nav className="bg-white/90 backdrop-blur-md shadow-sm border-b border-sage/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,52 +28,76 @@ export default function Navigation() {
               <Wand2 className="text-sage text-2xl mr-2" />
               <span className="font-inter font-bold text-xl text-navy">StyleAI</span>
             </Link>
-            <div className="hidden md:block ml-10">
-              <div className="flex items-baseline space-x-8">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    data-testid={`nav-${item.label.toLowerCase()}`}
-                  >
-                    <span
-                      className={`px-3 py-2 text-sm font-medium transition-colors ${
-                        location === item.href || (location === "/" && item.href === "/dashboard")
-                          ? "text-navy"
-                          : "text-charcoal hover:text-sage"
-                      }`}
+            {isAuthenticated && (
+              <div className="hidden md:block ml-10">
+                <div className="flex items-baseline space-x-8">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      data-testid={`nav-${item.label.toLowerCase()}`}
                     >
-                      {item.label}
-                    </span>
-                  </Link>
-                ))}
+                      <span
+                        className={`px-3 py-2 text-sm font-medium transition-colors ${
+                          location === item.href || (location === "/" && item.href === "/dashboard")
+                            ? "text-navy"
+                            : "text-charcoal hover:text-sage"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-            <Button 
-              onClick={() => navigate("/campaigns")}
-              className="bg-sage hover:bg-sage/90 text-white"
-              data-testid="button-new-campaign"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Campaign
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer">
-                  <AvatarFallback className="bg-coral text-white">
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => { logout(); navigate("/login"); }}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isAuthenticated ? (
+              <>
+                <Button 
+                  onClick={() => navigate("/campaigns")}
+                  className="bg-sage hover:bg-sage/90 text-white"
+                  data-testid="button-new-campaign"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Campaign
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="cursor-pointer">
+                      <AvatarFallback className="bg-coral text-white">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => { logout(); navigate("/login"); }}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/login")}
+                  className="text-charcoal hover:text-sage"
+                  data-testid="button-login"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  onClick={() => navigate("/onboarding")}
+                  className="bg-sage hover:bg-sage/90 text-white"
+                  data-testid="button-signup"
+                >
+                  Get Started
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

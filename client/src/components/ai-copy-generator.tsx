@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Wand2, Copy, Edit, Share, Plus, Save } from "lucide-react";
+import { Wand2, Copy, Edit, Share, Plus, Save, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 interface GeneratedCopy {
   headline: string;
@@ -20,6 +22,8 @@ interface GeneratedCopy {
 
 export default function AICopyGenerator() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [generatedCopies, setGeneratedCopies] = useState<GeneratedCopy[]>([]);
   const [formData, setFormData] = useState({
     brandType: "",
@@ -54,6 +58,16 @@ export default function AICopyGenerator() {
   });
 
   const handleGenerate = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to generate AI ad copy.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+    
     if (!formData.brandType || !formData.brandName || !formData.platform) {
       toast({
         title: "Missing information",
@@ -236,8 +250,17 @@ export default function AICopyGenerator() {
               className="flex-1 bg-sage hover:bg-sage/90 text-white"
               data-testid="button-generate-copy"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              {generateMutation.isPending ? "Generating..." : "Generate New Copy"}
+              {!isAuthenticated ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Sign In to Generate
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {generateMutation.isPending ? "Generating..." : "Generate New Copy"}
+                </>
+              )}
             </Button>
             <Button 
               variant="outline" 
