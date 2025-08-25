@@ -148,10 +148,10 @@ export default function Onboarding() {
               isStepValid = false;
               const errorMessage = [];
               if (availabilityResult.emailAvailable === false) {
-                errorMessage.push("This email is already registered");
+                errorMessage.push(`The email "${formData.email}" is already registered`);
               }
               if (availabilityResult.usernameAvailable === false) {
-                errorMessage.push("This username is already taken");
+                errorMessage.push(`The username "${formData.username}" is already taken`);
               }
               
               toast({
@@ -261,10 +261,10 @@ export default function Onboarding() {
                 {form.formState.errors.username && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.username.message}</p>
                 )}
-                {checkAvailabilityMutation.data?.usernameAvailable === false && (
+                {checkAvailabilityMutation.data?.usernameAvailable === false && form.watch("username") && (
                   <p className="text-red-500 text-sm mt-1">This username is already taken</p>
                 )}
-                {checkAvailabilityMutation.data?.usernameAvailable === true && form.watch("username") && (
+                {checkAvailabilityMutation.data?.usernameAvailable === true && form.watch("username") && form.watch("username").length >= 3 && (
                   <p className="text-green-500 text-sm mt-1">Username is available</p>
                 )}
               </div>
@@ -285,10 +285,10 @@ export default function Onboarding() {
                 {form.formState.errors.email && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                 )}
-                {checkAvailabilityMutation.data?.emailAvailable === false && (
+                {checkAvailabilityMutation.data?.emailAvailable === false && form.watch("email") && (
                   <p className="text-red-500 text-sm mt-1">An account with this email already exists</p>
                 )}
-                {checkAvailabilityMutation.data?.emailAvailable === true && form.watch("email") && (
+                {checkAvailabilityMutation.data?.emailAvailable === true && form.watch("email") && form.watch("email").includes('@') && (
                   <p className="text-green-500 text-sm mt-1">Email is available</p>
                 )}
               </div>
