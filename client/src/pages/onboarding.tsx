@@ -82,7 +82,7 @@ export default function Onboarding() {
       // Set authentication state
       localStorage.setItem('isAuthenticated', 'true');
       toast({
-        title: "Welcome to StyleAI!",
+        title: "Welcome to AdSensEI!",
         description: "Your account has been created successfully. Now let's create your first campaign suggestions!",
       });
     },
@@ -126,7 +126,7 @@ export default function Onboarding() {
           <div className="space-y-6">
             <div className="text-center mb-8">
               <Store className="w-16 h-16 text-sage mx-auto mb-4" />
-              <h2 className="font-inter font-bold text-2xl text-navy mb-2">Welcome to StyleAI</h2>
+              <h2 className="font-inter font-bold text-2xl text-navy mb-2">Welcome to AdSensEI</h2>
               <p className="text-charcoal/70">Let's set up your fashion brand account</p>
             </div>
             

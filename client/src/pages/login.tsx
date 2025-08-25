@@ -75,7 +75,7 @@ export default function Login() {
               <div className="w-10 h-10 bg-sage rounded-lg flex items-center justify-center mr-4">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <span className="font-inter font-bold text-2xl text-navy">StyleAI</span>
+              <span className="font-inter font-bold text-2xl text-navy">AdSensEI</span>
             </div>
             <h1 className="font-inter font-bold text-4xl text-navy mb-4 leading-tight">
               Your Fashion Marketing
@@ -129,7 +129,7 @@ export default function Login() {
                   <div className="w-8 h-8 bg-sage rounded-lg flex items-center justify-center mr-3">
                     <Sparkles className="h-5 w-5 text-white" />
                   </div>
-                  <span className="font-inter font-bold text-xl text-navy">StyleAI</span>
+                  <span className="font-inter font-bold text-xl text-navy">AdSensEI</span>
                 </div>
               </div>
               <CardTitle className="text-2xl text-navy">

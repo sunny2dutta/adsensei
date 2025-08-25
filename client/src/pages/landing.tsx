@@ -53,7 +53,7 @@ export default function Landing() {
               <div className="w-16 h-16 bg-gradient-to-br from-sage to-coral rounded-2xl flex items-center justify-center mr-4 shadow-lg">
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
-              <span className="font-inter font-bold text-4xl bg-gradient-to-r from-sage to-coral bg-clip-text text-transparent">StyleAI</span>
+              <span className="font-inter font-bold text-4xl bg-gradient-to-r from-sage to-coral bg-clip-text text-transparent">AdSensEI</span>
             </div>
             
             <h1 className="font-inter font-bold text-5xl lg:text-6xl text-navy mb-6 leading-tight">
@@ -204,7 +204,7 @@ export default function Landing() {
                   <Sparkles className="h-8 w-8 text-white" />
                 </div>
                 <h3 className="font-semibold text-navy text-xl">Ready to Get Started?</h3>
-                <p className="text-charcoal/70 mt-2">Join thousands of fashion brands already using StyleAI</p>
+                <p className="text-charcoal/70 mt-2">Join thousands of fashion brands already using AdSensEI</p>
               </div>
               
               <Button

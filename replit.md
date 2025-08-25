@@ -1,8 +1,8 @@
-# StyleAI - AI-Powered Fashion Marketing Platform
+# AdSensEI - AI-Powered Fashion Marketing Platform
 
 ## Overview
 
-StyleAI is a comprehensive AI-powered marketing platform specifically designed for direct-to-consumer (D2C) fashion brands. The application helps fashion businesses create compelling ad copy, manage campaigns, and gain insights through AI-generated recommendations. Built as a full-stack web application, it combines modern frontend technologies with a robust backend API to deliver intelligent marketing solutions.
+AdSensEI is a comprehensive AI-powered marketing platform specifically designed for direct-to-consumer (D2C) fashion brands. The application helps fashion businesses create compelling ad copy, manage campaigns, and gain insights through AI-generated recommendations. Built as a full-stack web application, it combines modern frontend technologies with a robust backend API to deliver intelligent marketing solutions.
 
 The platform targets fashion brands ranging from luxury to sustainable to streetwear, providing specialized templates and AI-generated content that understands fashion industry nuances. Key features include campaign management, template libraries, AI-powered ad copy generation, analytics dashboards, and client communication tools.
 

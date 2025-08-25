@@ -26,7 +26,7 @@ export default function Navigation() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <Wand2 className="text-sage text-2xl mr-2" />
-              <span className="font-inter font-bold text-xl text-navy">StyleAI</span>
+              <span className="font-inter font-bold text-xl text-navy">AdSensEI</span>
             </Link>
             {isAuthenticated && (
               <div className="hidden md:block ml-10">

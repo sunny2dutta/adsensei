@@ -36,7 +36,7 @@ export interface AdCopyVariation {
 
 // Client-side utility functions for working with AI-generated content
 export class AIContentManager {
-  private static readonly STORAGE_KEY = 'styleai_generated_content';
+  private static readonly STORAGE_KEY = 'adsensei_generated_content';
 
   static saveGeneratedCopy(copy: GeneratedAdCopy): AdCopyVariation {
     const variation: AdCopyVariation = {
