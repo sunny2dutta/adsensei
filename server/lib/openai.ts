@@ -76,6 +76,119 @@ Respond with JSON in this format:
   }
 }
 
+export interface CampaignSuggestionRequest {
+  brandName: string;
+  brandType: string; // luxury, sustainable, streetwear, etc.
+  brandValues?: string;
+  targetDemographic: {
+    ageRange: string;
+    gender: string;
+    interests: string[];
+    location: string;
+  };
+  budget?: number;
+  platforms: string[];
+  seasonality?: string;
+}
+
+export interface SuggestedCampaign {
+  title: string;
+  description: string;
+  platform: string;
+  targetAudience: string;
+  campaignType: string;
+  estimatedReach: string;
+  budget: string;
+  duration: string;
+  keyMessages: string[];
+  hashtags: string[];
+  demographicInsights: string;
+  performancePrediction: {
+    expectedCTR: string;
+    expectedConversions: string;
+    confidence: string;
+  };
+}
+
+export async function generateCampaignSuggestions(request: CampaignSuggestionRequest): Promise<{
+  suggestions: SuggestedCampaign[];
+  demographicAnalysis: string[];
+  brandOptimization: string[];
+}> {
+  try {
+    const prompt = `As an expert fashion marketing strategist, analyze this D2C fashion brand and suggest optimal campaigns:
+
+Brand Profile:
+- Name: ${request.brandName}
+- Type: ${request.brandType}
+- Values: ${request.brandValues || "Not specified"}
+- Target Demographic: ${request.targetDemographic.ageRange}, ${request.targetDemographic.gender}, interests: ${request.targetDemographic.interests.join(', ')}, location: ${request.targetDemographic.location}
+- Budget Range: ${request.budget ? `$${(request.budget / 100).toFixed(2)}` : "Not specified"}
+- Available Platforms: ${request.platforms.join(', ')}
+- Season/Timing: ${request.seasonality || "Year-round"}
+
+Generate 3 highly targeted campaign suggestions that:
+1. Align with the brand's values and positioning
+2. Resonate with the specific demographic
+3. Consider platform-specific best practices
+4. Include performance predictions based on fashion industry benchmarks
+5. Optimize for demographic engagement patterns
+
+For each campaign, provide specific demographic insights and explain why it will work for this audience.
+
+Also include:
+- Demographic analysis: What works best for this audience segment in fashion marketing
+- Brand optimization recommendations: How to better position campaigns for this brand type
+
+Respond with JSON in this format:
+{
+  "suggestions": [
+    {
+      "title": "Campaign name",
+      "description": "Detailed campaign concept",
+      "platform": "Primary platform",
+      "targetAudience": "Specific audience description",
+      "campaignType": "e.g., Product Launch, Lifestyle, Seasonal Sale",
+      "estimatedReach": "e.g., 15K-30K",
+      "budget": "Suggested budget range",
+      "duration": "Recommended duration",
+      "keyMessages": ["message 1", "message 2", "message 3"],
+      "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
+      "demographicInsights": "Why this works for this demographic",
+      "performancePrediction": {
+        "expectedCTR": "e.g., 2.5-3.2%",
+        "expectedConversions": "e.g., 180-250",
+        "confidence": "High/Medium/Low"
+      }
+    }
+  ],
+  "demographicAnalysis": ["insight 1", "insight 2", "insight 3"],
+  "brandOptimization": ["recommendation 1", "recommendation 2", "recommendation 3"]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert fashion marketing strategist with deep knowledge of demographic targeting, brand positioning, and D2C fashion marketing performance data."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result as { suggestions: SuggestedCampaign[]; demographicAnalysis: string[]; brandOptimization: string[] };
+  } catch (error) {
+    throw new Error("Failed to generate campaign suggestions: " + (error as Error).message);
+  }
+}
+
 export async function generateCampaignInsights(campaignData: {
   impressions: number;
   clicks: number;

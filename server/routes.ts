@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateAdCopy, generateCampaignInsights } from "./lib/openai";
+import { generateAdCopy, generateCampaignInsights, generateCampaignSuggestions } from "./lib/openai";
 import { generateInstagramAuthUrl, exchangeCodeForToken, publishToInstagram, getInstagramAccount, formatInstagramCaption, validateImageUrl } from "./lib/instagram";
 import { insertCampaignSchema, insertMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
@@ -333,6 +333,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Instagram disconnected successfully" });
     } catch (error) {
       res.status(500).json({ message: "Error disconnecting Instagram account" });
+    }
+  });
+
+  // Campaign Suggestions
+  app.post("/api/generate-campaign-suggestions", async (req, res) => {
+    try {
+      const suggestionRequestSchema = z.object({
+        brandName: z.string(),
+        brandType: z.string(),
+        brandValues: z.string().optional(),
+        targetDemographic: z.object({
+          ageRange: z.string(),
+          gender: z.string(),
+          interests: z.array(z.string()),
+          location: z.string()
+        }),
+        budget: z.number().optional(),
+        platforms: z.array(z.string()),
+        seasonality: z.string().optional()
+      });
+
+      const requestData = suggestionRequestSchema.parse(req.body);
+      const suggestions = await generateCampaignSuggestions(requestData);
+      res.json(suggestions);
+    } catch (error) {
+      res.status(500).json({ message: "Error generating campaign suggestions: " + (error as Error).message });
     }
   });
 

@@ -1,5 +1,6 @@
 import Hero from "@/components/hero";
 import AICopyGenerator from "@/components/ai-copy-generator";
+import CampaignSuggestions from "@/components/campaign-suggestions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Eye, TrendingUp, Store, Brain, Rocket } from "lucide-react";
@@ -201,6 +202,11 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
+        </div>
+
+        {/* Campaign Suggestions Section */}
+        <div className="mt-12">
+          <CampaignSuggestions />
         </div>
       </section>
     </div>
