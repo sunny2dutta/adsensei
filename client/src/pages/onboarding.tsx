@@ -76,7 +76,9 @@ export default function Onboarding() {
   const checkAvailabilityMutation = useMutation({
     mutationFn: async (data: { email?: string; username?: string }) => {
       const response = await apiRequest("POST", "/api/auth/check-availability", data);
-      return response.json();
+      const result = await response.json();
+      console.log("Availability check result:", result, "for data:", data);
+      return result;
     },
   });
 
@@ -127,17 +129,45 @@ export default function Onboarding() {
       case 1:
         isStepValid = await form.trigger(["username", "email", "password", "confirmPassword"]);
         
-        // Also check if username/email are available
+        // Always check availability during step validation
         if (isStepValid) {
           const formData = form.getValues();
-          if (checkAvailabilityMutation.data?.emailAvailable === false || 
-              checkAvailabilityMutation.data?.usernameAvailable === false) {
-            isStepValid = false;
+          console.log("Checking availability for:", formData.email, formData.username);
+          
+          try {
+            // Always do a fresh availability check
+            const checkData: { email?: string; username?: string } = {};
+            if (formData.email) checkData.email = formData.email;
+            if (formData.username) checkData.username = formData.username;
+            
+            const availabilityResult = await checkAvailabilityMutation.mutateAsync(checkData);
+            console.log("Availability result:", availabilityResult);
+            
+            if (availabilityResult.emailAvailable === false || 
+                availabilityResult.usernameAvailable === false) {
+              isStepValid = false;
+              const errorMessage = [];
+              if (availabilityResult.emailAvailable === false) {
+                errorMessage.push("This email is already registered");
+              }
+              if (availabilityResult.usernameAvailable === false) {
+                errorMessage.push("This username is already taken");
+              }
+              
+              toast({
+                title: "Account information not available",
+                description: errorMessage.join(". "),
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error("Availability check failed:", error);
             toast({
-              title: "Username or email not available",
-              description: "Please choose a different username or email address.",
+              title: "Unable to verify availability",
+              description: "Please try again",
               variant: "destructive",
             });
+            isStepValid = false;
           }
         }
         
