@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Eye, TrendingUp, Store, Brain, Rocket } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
+  const [, navigate] = useLocation();
   // Mock performance data - in real app this would come from API
   const performanceData = {
     activeCampaigns: 12,
@@ -158,6 +160,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button 
+                    onClick={() => navigate("/campaigns")}
                     variant="ghost" 
                     className="w-full justify-start p-3 h-auto border border-gray-200 hover:border-sage hover:bg-sage/5 group"
                     data-testid="button-quick-new-campaign"
@@ -170,6 +173,7 @@ export default function Dashboard() {
                   </Button>
                   
                   <Button 
+                    onClick={() => navigate("/clients")}
                     variant="ghost" 
                     className="w-full justify-start p-3 h-auto border border-gray-200 hover:border-coral hover:bg-coral/5 group"
                     data-testid="button-quick-review-pending"
@@ -182,6 +186,7 @@ export default function Dashboard() {
                   </Button>
                   
                   <Button 
+                    onClick={() => navigate("/analytics")}
                     variant="ghost" 
                     className="w-full justify-start p-3 h-auto border border-gray-200 hover:border-golden hover:bg-golden/5 group"
                     data-testid="button-quick-view-analytics"

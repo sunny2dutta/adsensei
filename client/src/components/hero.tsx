@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Rocket, Play, CheckCircle, Clock } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Hero() {
+  const [, navigate] = useLocation();
   return (
     <section className="relative bg-gradient-to-br from-navy via-navy/90 to-sage/20 text-white py-20 overflow-hidden">
       <div className="absolute inset-0 opacity-10">
@@ -24,6 +26,7 @@ export default function Hero() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
+                onClick={() => navigate("/onboarding")}
                 size="lg" 
                 className="bg-golden hover:bg-golden/90 text-navy px-8 py-4 text-lg font-semibold transition-all hover:scale-105 hover:shadow-xl"
                 data-testid="button-start-trial"
@@ -32,13 +35,14 @@ export default function Hero() {
                 Start Free Trial
               </Button>
               <Button 
+                onClick={() => navigate("/templates")}
                 variant="outline" 
                 size="lg" 
                 className="border-2 border-white/30 hover:bg-white/10 text-white px-8 py-4 text-lg font-semibold transition-all"
                 data-testid="button-watch-demo"
               >
                 <Play className="mr-2 h-5 w-5" />
-                Watch Demo
+                View Templates
               </Button>
             </div>
             <div className="mt-8 flex items-center space-x-6 text-sm text-gray-300">

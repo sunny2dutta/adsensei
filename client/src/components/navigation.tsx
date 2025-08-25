@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Wand2, Plus, User } from "lucide-react";
 
 export default function Navigation() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
@@ -47,6 +47,7 @@ export default function Navigation() {
           </div>
           <div className="flex items-center space-x-4">
             <Button 
+              onClick={() => navigate("/campaigns")}
               className="bg-sage hover:bg-sage/90 text-white"
               data-testid="button-new-campaign"
             >
