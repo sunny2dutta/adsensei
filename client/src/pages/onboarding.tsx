@@ -27,8 +27,7 @@ const onboardingSchema = insertUserSchema.extend({
   path: ["confirmPassword"],
 });
 
-// Debug schema to see what's required
-console.log("Onboarding schema shape:", onboardingSchema.shape);
+// Remove debug log
 
 type OnboardingForm = z.infer<typeof onboardingSchema>;
 
@@ -471,6 +470,7 @@ export default function Onboarding() {
                   variant="outline"
                   onClick={prevStep}
                   disabled={currentStep === 1}
+                  className={currentStep === 1 ? "opacity-50 cursor-not-allowed" : ""}
                   data-testid="button-previous"
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" />
