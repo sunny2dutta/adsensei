@@ -34,24 +34,24 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginForm) => {
-      // In a real app, this would authenticate the user
-      // For demo purposes, we'll simulate successful login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true, user: { email: data.email } };
+      const response = await apiRequest("POST", "/api/auth/login", data);
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Welcome back!",
         description: "Successfully logged in to your Fashion Marketing Command Center.",
       });
-      // Store auth state (in real app, would use proper auth)
+      // Store auth state and user info
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('currentUserId', data.user.id);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
       navigate("/dashboard");
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     },

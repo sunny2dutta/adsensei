@@ -73,15 +73,16 @@ export default function Onboarding() {
   const createUserMutation = useMutation({
     mutationFn: async (data: OnboardingForm) => {
       const { confirmPassword, brandDescription, targetMarket, monthlyBudget, primaryGoals, ...userData } = data;
-      const response = await apiRequest("POST", "/api/users", userData);
+      const response = await apiRequest("POST", "/api/auth/register", userData);
       return response.json();
     },
-    onSuccess: (userData) => {
+    onSuccess: (data) => {
       setAccountCreated(true);
       setCurrentStep(5); // Move to campaign suggestions step
       // Set authentication state and store user ID
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('currentUserId', userData.id);
+      localStorage.setItem('currentUserId', data.user.id);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
       // Store onboarding data for form pre-population
       const formData = form.getValues();
       localStorage.setItem('userOnboardingData', JSON.stringify({
