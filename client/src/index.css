@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@300;400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(45, 29%, 97%);
+  --foreground: hsl(210, 25%, 7.8431%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(210, 25%, 7.8431%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(210, 25%, 7.8431%);
+  --primary: hsl(93, 23%, 55%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(203, 50%, 25%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(240, 1.9608%, 90%);
+  --muted-foreground: hsl(210, 25%, 7.8431%);
+  --accent: hsl(93, 23%, 55%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(356.3033, 90.5579%, 54.3137%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(201.4286, 30.4348%, 90.9804%);
+  --input: hsl(200, 23.0769%, 97.4510%);
+  --ring: hsl(93, 23%, 55%);
+  --chart-1: hsl(93, 23%, 55%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --sidebar: hsl(0, 0%, 100%);
+  --sidebar-foreground: hsl(210, 25%, 7.8431%);
+  --sidebar-primary: hsl(93, 23%, 55%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(93, 23%, 55%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(201.4286, 30.4348%, 90.9804%);
+  --sidebar-ring: hsl(93, 23%, 55%);
+  --font-sans: 'Source Sans Pro', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --font-inter: 'Inter', sans-serif;
+  --radius: 0.75rem;
+  
+  /* Custom fashion brand colors */
+  --sage: hsl(86, 24%, 51%);
+  --navy: hsl(208, 52%, 24%);
+  --cream: hsl(45, 29%, 97%);
+  --coral: hsl(13, 45%, 76%);
+  --golden: hsl(50, 89%, 57%);
+  --charcoal: hsl(214, 32%, 25%);
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(200, 6.6667%, 91.1765%);
+  --card: hsl(228, 9.8039%, 10%);
+  --card-foreground: hsl(0, 0%, 85.0980%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(200, 6.6667%, 91.1765%);
+  --primary: hsl(93, 23%, 55%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(195.0000, 15.3846%, 94.9020%);
+  --secondary-foreground: hsl(210, 25%, 7.8431%);
+  --muted: hsl(0, 0%, 9.4118%);
+  --muted-foreground: hsl(210, 3.3898%, 46.2745%);
+  --accent: hsl(93, 23%, 55%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(356.3033, 90.5579%, 54.3137%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(210, 5.2632%, 14.9020%);
+  --input: hsl(207.6923, 27.6596%, 18.4314%);
+  --ring: hsl(93, 23%, 55%);
+  --chart-1: hsl(93, 23%, 55%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --sidebar: hsl(228, 9.8039%, 10%);
+  --sidebar-foreground: hsl(0, 0%, 85.0980%);
+  --sidebar-primary: hsl(93, 23%, 55%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(93, 23%, 55%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(210, 5.2632%, 14.9020%);
+  --sidebar-ring: hsl(93, 23%, 55%);
+  --font-sans: 'Source Sans Pro', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --font-inter: 'Inter', sans-serif;
+  --radius: 0.75rem;
+  
+  /* Custom fashion brand colors - dark mode */
+  --sage: hsl(86, 24%, 51%);
+  --navy: hsl(208, 52%, 24%);
+  --cream: hsl(45, 5%, 15%);
+  --coral: hsl(13, 45%, 60%);
+  --golden: hsl(50, 89%, 57%);
+  --charcoal: hsl(214, 32%, 85%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .font-inter {
+    font-family: var(--font-inter);
+  }
+  
+  .text-sage {
+    color: var(--sage);
+  }
+  
+  .bg-sage {
+    background-color: var(--sage);
+  }
+  
+  .text-navy {
+    color: var(--navy);
+  }
+  
+  .bg-navy {
+    background-color: var(--navy);
+  }
+  
+  .text-cream {
+    color: var(--cream);
+  }
+  
+  .bg-cream {
+    background-color: var(--cream);
+  }
+  
+  .text-coral {
+    color: var(--coral);
+  }
+  
+  .bg-coral {
+    background-color: var(--coral);
+  }
+  
+  .text-golden {
+    color: var(--golden);
+  }
+  
+  .bg-golden {
+    background-color: var(--golden);
+  }
+  
+  .text-charcoal {
+    color: var(--charcoal);
+  }
+  
+  .bg-charcoal {
+    background-color: var(--charcoal);
+  }
+  
+  .border-sage {
+    border-color: var(--sage);
+  }
+  
+  .border-navy {
+    border-color: var(--navy);
+  }
+  
+  .border-coral {
+    border-color: var(--coral);
+  }
+  
+  .border-golden {
+    border-color: var(--golden);
+  }
+  
+  .hover\:bg-sage\/90:hover {
+    background-color: hsl(from var(--sage) h s l / 0.9);
+  }
+  
+  .hover\:bg-navy\/90:hover {
+    background-color: hsl(from var(--navy) h s l / 0.9);
+  }
+  
+  .hover\:bg-coral\/90:hover {
+    background-color: hsl(from var(--coral) h s l / 0.9);
+  }
+  
+  .hover\:bg-golden\/90:hover {
+    background-color: hsl(from var(--golden) h s l / 0.9);
+  }
+  
+  .bg-sage\/10 {
+    background-color: hsl(from var(--sage) h s l / 0.1);
+  }
+  
+  .bg-coral\/10 {
+    background-color: hsl(from var(--coral) h s l / 0.1);
+  }
+  
+  .bg-golden\/10 {
+    background-color: hsl(from var(--golden) h s l / 0.1);
+  }
+  
+  .bg-navy\/10 {
+    background-color: hsl(from var(--navy) h s l / 0.1);
+  }
+  
+  .bg-sage\/5 {
+    background-color: hsl(from var(--sage) h s l / 0.05);
+  }
+  
+  .bg-coral\/5 {
+    background-color: hsl(from var(--coral) h s l / 0.05);
+  }
+  
+  .bg-golden\/5 {
+    background-color: hsl(from var(--golden) h s l / 0.05);
+  }
+  
+  .bg-navy\/5 {
+    background-color: hsl(from var(--navy) h s l / 0.05);
+  }
+}
