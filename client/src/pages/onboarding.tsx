@@ -72,13 +72,17 @@ export default function Onboarding() {
     },
   });
 
+  // State to track current field being checked to avoid stale data display
+  const [currentCheckField, setCurrentCheckField] = useState<{email?: string; username?: string} | null>(null);
+
   // Check if email/username is available
   const checkAvailabilityMutation = useMutation({
     mutationFn: async (data: { email?: string; username?: string }) => {
+      setCurrentCheckField(data);
       const response = await apiRequest("POST", "/api/auth/check-availability", data);
       const result = await response.json();
       console.log("Availability check result:", result, "for data:", data);
-      return result;
+      return { ...result, checkedData: data };
     },
   });
 
@@ -261,10 +265,13 @@ export default function Onboarding() {
                 {form.formState.errors.username && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.username.message}</p>
                 )}
-                {checkAvailabilityMutation.data?.usernameAvailable === false && form.watch("username") && (
+                {checkAvailabilityMutation.data?.usernameAvailable === false && 
+                 checkAvailabilityMutation.data?.checkedData?.username === form.watch("username") && (
                   <p className="text-red-500 text-sm mt-1">This username is already taken</p>
                 )}
-                {checkAvailabilityMutation.data?.usernameAvailable === true && form.watch("username") && form.watch("username").length >= 3 && (
+                {checkAvailabilityMutation.data?.usernameAvailable === true && 
+                 checkAvailabilityMutation.data?.checkedData?.username === form.watch("username") && 
+                 form.watch("username") && form.watch("username").length >= 3 && (
                   <p className="text-green-500 text-sm mt-1">Username is available</p>
                 )}
               </div>
@@ -285,10 +292,13 @@ export default function Onboarding() {
                 {form.formState.errors.email && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                 )}
-                {checkAvailabilityMutation.data?.emailAvailable === false && form.watch("email") && (
+                {checkAvailabilityMutation.data?.emailAvailable === false && 
+                 checkAvailabilityMutation.data?.checkedData?.email === form.watch("email") && (
                   <p className="text-red-500 text-sm mt-1">An account with this email already exists</p>
                 )}
-                {checkAvailabilityMutation.data?.emailAvailable === true && form.watch("email") && form.watch("email").includes('@') && (
+                {checkAvailabilityMutation.data?.emailAvailable === true && 
+                 checkAvailabilityMutation.data?.checkedData?.email === form.watch("email") && 
+                 form.watch("email") && form.watch("email").includes('@') && (
                   <p className="text-green-500 text-sm mt-1">Email is available</p>
                 )}
               </div>
