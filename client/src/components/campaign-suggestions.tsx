@@ -67,18 +67,18 @@ export default function CampaignSuggestions() {
   const form = useForm<SuggestionFormData>({
     resolver: zodResolver(suggestionFormSchema),
     defaultValues: {
-      brandName: "",
-      brandType: "",
-      brandValues: "",
+      brandName: "StyleCo", // Pre-populated from user data
+      brandType: "sustainable", // Pre-populated from onboarding
+      brandValues: "Sustainable fashion, ethical production, quality craftsmanship",
       targetDemographic: {
-        ageRange: "",
-        gender: "",
-        interests: [],
-        location: ""
+        ageRange: "25-34", // Pre-populated from onboarding
+        gender: "women", // Pre-populated from onboarding
+        interests: ["Fashion", "Sustainability", "Quality"], // Pre-populated
+        location: "United States" // Pre-populated
       },
-      budget: undefined,
-      platforms: [],
-      seasonality: ""
+      budget: 5000, // Pre-populated from onboarding
+      platforms: ["Instagram", "Facebook"], // Pre-populated
+      seasonality: "year-round"
     }
   });
 
@@ -164,13 +164,19 @@ export default function CampaignSuggestions() {
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Brand & Demographic Analysis</DialogTitle>
+                <DialogTitle>Generate Campaign Suggestions</DialogTitle>
+                <p className="text-sm text-charcoal/70">
+                  Using your brand information from onboarding. You can adjust any details below if needed.
+                </p>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   {/* Brand Information */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy">Brand Information</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-navy">Brand Information</h3>
+                      <span className="text-xs bg-sage/10 text-sage px-2 py-1 rounded">Auto-filled from onboarding</span>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -235,7 +241,10 @@ export default function CampaignSuggestions() {
 
                   {/* Target Demographics */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy">Target Demographics</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-navy">Target Demographics</h3>
+                      <span className="text-xs bg-sage/10 text-sage px-2 py-1 rounded">Auto-filled from onboarding</span>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -331,7 +340,10 @@ export default function CampaignSuggestions() {
 
                   {/* Campaign Parameters */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy">Campaign Parameters</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-navy">Campaign Parameters</h3>
+                      <span className="text-xs bg-sage/10 text-sage px-2 py-1 rounded">Auto-filled from onboarding</span>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
