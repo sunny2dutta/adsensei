@@ -17,31 +17,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // Check if storage has authenticateUser method (DatabaseStorage)
-      if ('authenticateUser' in storage && typeof storage.authenticateUser === 'function') {
-        const user = await storage.authenticateUser(email, password);
-        if (!user) {
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
+      console.log("Login attempt for email:", email);
 
-        // Don't send password hash to client
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({ user: userWithoutPassword });
-      } else {
-        // Fallback for other storage implementations
-        const user = await storage.getUserByEmail(email);
-        if (!user) {
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
-
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
-
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({ user: userWithoutPassword });
+      // Always use the proper authentication method
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        console.log("User not found:", email);
+        return res.status(401).json({ message: "Invalid credentials" });
       }
+
+      console.log("User found, checking password...");
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log("Password valid:", isValidPassword);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Check if email is verified
+      if (user.emailVerified === false) {
+        return res.status(401).json({ 
+          message: "Email not verified", 
+          needsVerification: true,
+          userId: user.id 
+        });
+      }
+
+      // Don't send password hash to client
+      const { password: _, ...userWithoutPassword } = user;
+      console.log("Login successful for:", email);
+      res.json({ user: userWithoutPassword });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
