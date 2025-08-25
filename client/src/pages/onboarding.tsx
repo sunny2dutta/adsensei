@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users } from "lucide-react";
+import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users, Lightbulb, Target, CheckCircle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
+import CampaignSuggestions from "@/components/campaign-suggestions";
 
 const onboardingSchema = insertUserSchema.extend({
   confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
@@ -48,8 +49,9 @@ export default function Onboarding() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [accountCreated, setAccountCreated] = useState(false);
   
-  const totalSteps = 4;
+  const totalSteps = 5; // Added step for campaign suggestions
   const progress = (currentStep / totalSteps) * 100;
 
   const form = useForm<OnboardingForm>({
@@ -75,11 +77,12 @@ export default function Onboarding() {
       return response.json();
     },
     onSuccess: () => {
+      setAccountCreated(true);
+      setCurrentStep(5); // Move to campaign suggestions step
       toast({
         title: "Welcome to StyleAI!",
-        description: "Your account has been created successfully. Let's start creating amazing campaigns!",
+        description: "Your account has been created successfully. Now let's create your first campaign suggestions!",
       });
-      // In a real app, redirect to dashboard or login
     },
     onError: (error: Error) => {
       toast({
@@ -305,7 +308,7 @@ export default function Onboarding() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Rocket className="w-16 h-16 text-navy mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-navy mx-auto mb-4" />
               <h2 className="font-inter font-bold text-2xl text-navy mb-2">Ready to Launch!</h2>
               <p className="text-charcoal/70">Review your information and create your account</p>
             </div>
@@ -345,6 +348,35 @@ export default function Onboarding() {
           </div>
         );
 
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Lightbulb className="w-16 h-16 text-golden mx-auto mb-4" />
+              <h2 className="font-inter font-bold text-2xl text-navy mb-2">Your Personalized Campaign Suggestions</h2>
+              <p className="text-charcoal/70">Based on your brand profile, here are AI-generated campaign recommendations</p>
+            </div>
+            
+            <div className="max-h-96 overflow-y-auto">
+              <CampaignSuggestions />
+            </div>
+            
+            <div className="text-center bg-sage/5 rounded-lg p-4">
+              <p className="text-sm text-charcoal/70 mb-3">
+                ✨ Your campaigns are tailored to your <strong>{form.watch("brandType")}</strong> brand targeting <strong>{form.watch("targetMarket")}</strong>
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/dashboard'} 
+                className="bg-navy hover:bg-navy/90 text-white"
+                data-testid="button-go-to-dashboard"
+              >
+                <Rocket className="mr-2 h-4 w-4" />
+                Go to Dashboard
+              </Button>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -368,40 +400,42 @@ export default function Onboarding() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {renderStepContent()}
             
-            <div className="flex justify-between mt-8">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                data-testid="button-previous"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              
-              {currentStep < totalSteps ? (
+            {currentStep < 5 && (
+              <div className="flex justify-between mt-8">
                 <Button
                   type="button"
-                  onClick={nextStep}
-                  className="bg-sage hover:bg-sage/90 text-white"
-                  data-testid="button-next"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  data-testid="button-previous"
                 >
-                  Next
-                  <ChevronRight className="ml-2 h-4 w-4" />
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Previous
                 </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={createUserMutation.isPending}
-                  className="bg-navy hover:bg-navy/90 text-white"
-                  data-testid="button-create-account"
-                >
-                  {createUserMutation.isPending ? "Creating Account..." : "Create Account"}
-                  <Rocket className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </div>
+                
+                {currentStep < 4 ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className="bg-sage hover:bg-sage/90 text-white"
+                    data-testid="button-next"
+                  >
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={createUserMutation.isPending}
+                    className="bg-navy hover:bg-navy/90 text-white"
+                    data-testid="button-create-account"
+                  >
+                    {createUserMutation.isPending ? "Creating Account..." : "Create Account & Get Suggestions"}
+                    <Rocket className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
