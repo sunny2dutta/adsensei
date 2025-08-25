@@ -27,6 +27,9 @@ const onboardingSchema = insertUserSchema.extend({
   path: ["confirmPassword"],
 });
 
+// Debug schema to see what's required
+console.log("Onboarding schema shape:", onboardingSchema.shape);
+
 type OnboardingForm = z.infer<typeof onboardingSchema>;
 
 const BRAND_TYPES = [
@@ -108,24 +111,45 @@ export default function Onboarding() {
   });
 
   const nextStep = async () => {
+    console.log("Next step clicked, current step:", currentStep);
+    
     // Validate current step before proceeding
     let isStepValid = false;
     
     switch (currentStep) {
       case 1:
         isStepValid = await form.trigger(["username", "email", "password", "confirmPassword"]);
+        console.log("Step 1 validation result:", isStepValid);
+        console.log("Form errors:", form.formState.errors);
         break;
       case 2:
         isStepValid = await form.trigger(["companyName", "brandType"]);
+        console.log("Step 2 validation result:", isStepValid);
+        console.log("Form errors:", form.formState.errors);
         break;
       case 3:
         isStepValid = true; // Optional fields
         break;
       case 4:
         // Final submission
+        console.log("Final submission step");
         const formData = form.getValues();
-        if (form.formState.isValid) {
+        console.log("Form data:", formData);
+        console.log("Selected goals:", selectedGoals);
+        
+        // Validate the entire form before submission
+        const isFormValid = await form.trigger();
+        console.log("Full form validation:", isFormValid);
+        
+        if (isFormValid) {
           createUserMutation.mutate({ ...formData, primaryGoals: selectedGoals });
+        } else {
+          console.log("Form validation failed:", form.formState.errors);
+          toast({
+            title: "Please check your information",
+            description: "Some required fields are missing or invalid.",
+            variant: "destructive",
+          });
         }
         return;
       default:
@@ -134,6 +158,8 @@ export default function Onboarding() {
     
     if (isStepValid && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
+    } else if (!isStepValid) {
+      console.log("Step validation failed, staying on current step");
     }
   };
 
