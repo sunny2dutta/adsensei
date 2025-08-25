@@ -107,8 +107,32 @@ export default function Onboarding() {
     },
   });
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
+  const nextStep = async () => {
+    // Validate current step before proceeding
+    let isStepValid = false;
+    
+    switch (currentStep) {
+      case 1:
+        isStepValid = await form.trigger(["username", "email", "password", "confirmPassword"]);
+        break;
+      case 2:
+        isStepValid = await form.trigger(["companyName", "brandType"]);
+        break;
+      case 3:
+        isStepValid = true; // Optional fields
+        break;
+      case 4:
+        // Final submission
+        const formData = form.getValues();
+        if (form.formState.isValid) {
+          createUserMutation.mutate({ ...formData, primaryGoals: selectedGoals });
+        }
+        return;
+      default:
+        isStepValid = true;
+    }
+    
+    if (isStepValid && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -439,7 +463,8 @@ export default function Onboarding() {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={nextStep}
                     disabled={createUserMutation.isPending}
                     className="bg-navy hover:bg-navy/90 text-white"
                     data-testid="button-create-account"
