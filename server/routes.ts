@@ -74,6 +74,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check if username/email exists (for validation)
+  app.post("/api/auth/check-availability", async (req, res) => {
+    try {
+      const { email, username } = req.body;
+      
+      const result = {
+        emailAvailable: true,
+        usernameAvailable: true
+      };
+      
+      if (email) {
+        const existingEmail = await storage.getUserByEmail(email);
+        result.emailAvailable = !existingEmail;
+      }
+      
+      if (username) {
+        const existingUsername = await storage.getUserByUsername(username);
+        result.usernameAvailable = !existingUsername;
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Check availability error:", error);
+      res.status(500).json({ message: "Failed to check availability" });
+    }
+  });
+
   // User routes
   app.post("/api/users", async (req, res) => {
     try {

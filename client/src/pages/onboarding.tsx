@@ -72,6 +72,14 @@ export default function Onboarding() {
     },
   });
 
+  // Check if email/username is available
+  const checkAvailabilityMutation = useMutation({
+    mutationFn: async (data: { email?: string; username?: string }) => {
+      const response = await apiRequest("POST", "/api/auth/check-availability", data);
+      return response.json();
+    },
+  });
+
   const createUserMutation = useMutation({
     mutationFn: async (data: OnboardingForm) => {
       const { confirmPassword, brandDescription, targetMarket, monthlyBudget, primaryGoals, ...userData } = data;
@@ -118,6 +126,21 @@ export default function Onboarding() {
     switch (currentStep) {
       case 1:
         isStepValid = await form.trigger(["username", "email", "password", "confirmPassword"]);
+        
+        // Also check if username/email are available
+        if (isStepValid) {
+          const formData = form.getValues();
+          if (checkAvailabilityMutation.data?.emailAvailable === false || 
+              checkAvailabilityMutation.data?.usernameAvailable === false) {
+            isStepValid = false;
+            toast({
+              title: "Username or email not available",
+              description: "Please choose a different username or email address.",
+              variant: "destructive",
+            });
+          }
+        }
+        
         console.log("Step 1 validation result:", isStepValid);
         console.log("Form errors:", form.formState.errors);
         break;
@@ -197,10 +220,22 @@ export default function Onboarding() {
                 <Input
                   id="username"
                   {...form.register("username")}
+                  onBlur={(e) => {
+                    const username = e.target.value.trim();
+                    if (username && username.length >= 3) {
+                      checkAvailabilityMutation.mutate({ username });
+                    }
+                  }}
                   data-testid="input-username"
                 />
                 {form.formState.errors.username && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.username.message}</p>
+                )}
+                {checkAvailabilityMutation.data?.usernameAvailable === false && (
+                  <p className="text-red-500 text-sm mt-1">This username is already taken</p>
+                )}
+                {checkAvailabilityMutation.data?.usernameAvailable === true && form.watch("username") && (
+                  <p className="text-green-500 text-sm mt-1">Username is available</p>
                 )}
               </div>
               <div>
@@ -209,10 +244,22 @@ export default function Onboarding() {
                   id="email"
                   type="email"
                   {...form.register("email")}
+                  onBlur={(e) => {
+                    const email = e.target.value.trim();
+                    if (email && email.includes('@')) {
+                      checkAvailabilityMutation.mutate({ email });
+                    }
+                  }}
                   data-testid="input-email"
                 />
                 {form.formState.errors.email && (
                   <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
+                )}
+                {checkAvailabilityMutation.data?.emailAvailable === false && (
+                  <p className="text-red-500 text-sm mt-1">An account with this email already exists</p>
+                )}
+                {checkAvailabilityMutation.data?.emailAvailable === true && form.watch("email") && (
+                  <p className="text-green-500 text-sm mt-1">Email is available</p>
                 )}
               </div>
             </div>
