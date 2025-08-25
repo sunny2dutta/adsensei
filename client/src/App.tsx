@@ -44,47 +44,48 @@ function Router() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <Switch>
-      {/* Public routes */}
-      <Route path="/login">
-        {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
-      </Route>
-      <Route path="/onboarding" component={Onboarding} />
-      
-      {/* Protected routes */}
-      <Route path="/">
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/dashboard">
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/campaigns">
-        <ProtectedRoute>
-          <Campaigns />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/templates">
-        <ProtectedRoute>
-          <Templates />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/analytics">
-        <ProtectedRoute>
-          <Analytics />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/clients">
-        <ProtectedRoute>
-          <Clients />
-        </ProtectedRoute>
-      </Route>
-      
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen bg-cream">
+      <Navigation />
+      <Switch>
+        {/* Public routes */}
+        <Route path="/login">
+          {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
+        </Route>
+        <Route path="/onboarding" component={Onboarding} />
+        
+        {/* Homepage - visible to all, functionality protected */}
+        <Route path="/" component={Dashboard} />
+        
+        {/* Protected routes */}
+        <Route path="/dashboard">
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/campaigns">
+          <ProtectedRoute>
+            <Campaigns />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/templates">
+          <ProtectedRoute>
+            <Templates />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/analytics">
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/clients">
+          <ProtectedRoute>
+            <Clients />
+          </ProtectedRoute>
+        </Route>
+        
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 
