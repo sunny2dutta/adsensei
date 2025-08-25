@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
@@ -44,44 +45,46 @@ function Router() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Navigation />
-      <Switch>
-        {/* Public routes */}
-        <Route path="/login">
-          {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
-        </Route>
-        <Route path="/onboarding" component={Onboarding} />
-        
-        {/* Homepage - visible to all, functionality protected within components */}
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        
-        {/* Protected routes */}
-        <Route path="/campaigns">
-          <ProtectedRoute>
-            <Campaigns />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/templates">
-          <ProtectedRoute>
-            <Templates />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/analytics">
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/clients">
-          <ProtectedRoute>
-            <Clients />
-          </ProtectedRoute>
-        </Route>
-        
-        <Route component={NotFound} />
-      </Switch>
-    </div>
+    <Switch>
+      {/* Public routes */}
+      <Route path="/">
+        <Navigation />
+        <Landing />
+      </Route>
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
+      </Route>
+      <Route path="/onboarding" component={Onboarding} />
+      
+      {/* Protected routes */}
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/campaigns">
+        <ProtectedRoute>
+          <Campaigns />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/templates">
+        <ProtectedRoute>
+          <Templates />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/analytics">
+        <ProtectedRoute>
+          <Analytics />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/clients">
+        <ProtectedRoute>
+          <Clients />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
