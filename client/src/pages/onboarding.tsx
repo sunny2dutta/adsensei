@@ -76,11 +76,22 @@ export default function Onboarding() {
       const response = await apiRequest("POST", "/api/users", userData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (userData) => {
       setAccountCreated(true);
       setCurrentStep(5); // Move to campaign suggestions step
-      // Set authentication state
+      // Set authentication state and store user ID
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('currentUserId', userData.id);
+      // Store onboarding data for form pre-population
+      const formData = form.getValues();
+      localStorage.setItem('userOnboardingData', JSON.stringify({
+        brandName: formData.companyName,
+        brandType: formData.brandType,
+        brandValues: formData.brandDescription,
+        targetMarket: formData.targetMarket,
+        monthlyBudget: formData.monthlyBudget,
+        primaryGoals: selectedGoals
+      }));
       toast({
         title: "Welcome to AdSensEI!",
         description: "Your account has been created successfully. Now let's create your first campaign suggestions!",

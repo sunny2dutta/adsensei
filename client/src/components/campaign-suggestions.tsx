@@ -64,22 +64,75 @@ export default function CampaignSuggestions() {
   const [interestsInput, setInterestsInput] = useState("");
   const [platformsInput, setPlatformsInput] = useState<string[]>([]);
 
+  // Function to get user's onboarding data from localStorage
+  const getUserOnboardingData = () => {
+    try {
+      const storedData = localStorage.getItem('userOnboardingData');
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        return {
+          brandName: data.brandName || "",
+          brandType: data.brandType || "",
+          brandValues: data.brandValues || "",
+          targetDemographic: {
+            ageRange: getBudgetToAgeRange(data.monthlyBudget) || "25-34",
+            gender: "all",
+            interests: data.primaryGoals || ["Fashion"],
+            location: "United States"
+          },
+          budget: getBudgetFromRange(data.monthlyBudget),
+          platforms: ["Instagram", "Facebook"],
+          seasonality: ""
+        };
+      }
+    } catch (error) {
+      console.error('Error loading user onboarding data:', error);
+    }
+    
+    // Fallback to empty form
+    return {
+      brandName: "",
+      brandType: "",
+      brandValues: "",
+      targetDemographic: {
+        ageRange: "",
+        gender: "",
+        interests: [],
+        location: ""
+      },
+      budget: undefined,
+      platforms: [],
+      seasonality: ""
+    };
+  };
+
+  // Helper function to convert budget range to age range (approximation)
+  const getBudgetToAgeRange = (budgetRange?: string) => {
+    switch (budgetRange) {
+      case "under-1k": return "18-24";
+      case "1k-5k": return "25-34";
+      case "5k-10k": return "35-44";
+      case "10k-25k": return "45-54";
+      case "25k-plus": return "55+";
+      default: return "25-34";
+    }
+  };
+
+  // Helper function to convert budget range to number
+  const getBudgetFromRange = (budgetRange?: string) => {
+    switch (budgetRange) {
+      case "under-1k": return 500;
+      case "1k-5k": return 3000;
+      case "5k-10k": return 7500;
+      case "10k-25k": return 17500;
+      case "25k-plus": return 30000;
+      default: return undefined;
+    }
+  };
+
   const form = useForm<SuggestionFormData>({
     resolver: zodResolver(suggestionFormSchema),
-    defaultValues: {
-      brandName: "StyleCo", // Pre-populated from user data
-      brandType: "sustainable", // Pre-populated from onboarding
-      brandValues: "Sustainable fashion, ethical production, quality craftsmanship",
-      targetDemographic: {
-        ageRange: "25-34", // Pre-populated from onboarding
-        gender: "women", // Pre-populated from onboarding
-        interests: ["Fashion", "Sustainability", "Quality"], // Pre-populated
-        location: "United States" // Pre-populated
-      },
-      budget: 5000, // Pre-populated from onboarding
-      platforms: ["Instagram", "Facebook"], // Pre-populated
-      seasonality: "year-round"
-    }
+    defaultValues: getUserOnboardingData()
   });
 
   const generateSuggestionsMutation = useMutation({
