@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users, Lightbulb, Target, CheckCircle } from "lucide-react";
+import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users, Lightbulb, Target, CheckCircle, Mail } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
@@ -52,8 +52,11 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [accountCreated, setAccountCreated] = useState(false);
+  const [tempUserId, setTempUserId] = useState<string | null>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
   
-  const totalSteps = 5; // Added step for campaign suggestions
+  const totalSteps = 6; // Added step for email verification
   const progress = (currentStep / totalSteps) * 100;
 
   const form = useForm<OnboardingForm>({
@@ -93,8 +96,50 @@ export default function Onboarding() {
       return response.json();
     },
     onSuccess: (data) => {
+      setTempUserId(data.user.id);
+      sendVerificationEmailMutation.mutate({ userId: data.user.id });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create account",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send verification email mutation
+  const sendVerificationEmailMutation = useMutation({
+    mutationFn: async (data: { userId: string }) => {
+      const response = await apiRequest("POST", "/api/auth/send-verification-email", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setVerificationToken(data.developmentToken); // For development only
+      toast({
+        title: "Verification email sent",
+        description: "Please check your email for the verification link.",
+      });
+      setCurrentStep(2); // Move to email verification step
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to send verification email",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Verify email mutation
+  const verifyEmailMutation = useMutation({
+    mutationFn: async (data: { token: string }) => {
+      const response = await apiRequest("POST", "/api/auth/verify-email", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsEmailVerified(true);
       setAccountCreated(true);
-      setCurrentStep(5); // Move to campaign suggestions step
       // Set authentication state and store user ID
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('currentUserId', data.user.id);
@@ -110,13 +155,14 @@ export default function Onboarding() {
         primaryGoals: selectedGoals
       }));
       toast({
-        title: "Welcome to AdSensEI!",
-        description: "Your account has been created successfully. Now let's create your first campaign suggestions!",
+        title: "Email verified successfully!",
+        description: "Welcome to AdSensEI. Let's continue with your profile.",
       });
+      setCurrentStep(3); // Move to next step
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: "Failed to create account",
+        title: "Failed to verify email",
         description: error.message,
         variant: "destructive",
       });
@@ -177,36 +223,40 @@ export default function Onboarding() {
         
         console.log("Step 1 validation result:", isStepValid);
         console.log("Form errors:", form.formState.errors);
+        
+        // If valid, create the account and send verification email
+        if (isStepValid) {
+          const formData = form.getValues();
+          createUserMutation.mutate(formData);
+          return; // Don't increment step, mutation will handle navigation
+        }
         break;
       case 2:
-        isStepValid = await form.trigger(["companyName", "brandType"]);
-        console.log("Step 2 validation result:", isStepValid);
-        console.log("Form errors:", form.formState.errors);
-        break;
-      case 3:
-        isStepValid = true; // Optional fields
-        break;
-      case 4:
-        // Final submission
-        console.log("Final submission step");
-        const formData = form.getValues();
-        console.log("Form data:", formData);
-        console.log("Selected goals:", selectedGoals);
-        
-        // Validate the entire form before submission
-        const isFormValid = await form.trigger();
-        console.log("Full form validation:", isFormValid);
-        
-        if (isFormValid) {
-          createUserMutation.mutate({ ...formData, primaryGoals: selectedGoals });
-        } else {
-          console.log("Form validation failed:", form.formState.errors);
+        // Email verification step - check if email is verified
+        if (!isEmailVerified) {
           toast({
-            title: "Please check your information",
-            description: "Some required fields are missing or invalid.",
+            title: "Email verification required",
+            description: "Please verify your email before continuing.",
             variant: "destructive",
           });
+          return;
         }
+        isStepValid = true;
+        break;
+      case 3:
+        isStepValid = await form.trigger(["companyName", "brandType"]);
+        console.log("Step 3 validation result:", isStepValid);
+        console.log("Form errors:", form.formState.errors);
+        break;
+      case 4:
+        isStepValid = true; // Optional fields
+        break;
+      case 5:
+        isStepValid = true; // Optional fields  
+        break;
+      case 6:
+        // Move to campaign suggestions - already logged in
+        router.push("/dashboard");
         return;
       default:
         isStepValid = true;

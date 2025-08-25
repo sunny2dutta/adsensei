@@ -101,6 +101,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send email verification
+  app.post("/api/auth/send-verification-email", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.emailVerified) {
+        return res.status(400).json({ message: "Email already verified" });
+      }
+      
+      const token = await storage.generateEmailVerificationToken(userId);
+      
+      // In development, log the verification token instead of sending email
+      console.log("🔗 EMAIL VERIFICATION:");
+      console.log(`Email: ${user.email}`);
+      console.log(`Verification Token: ${token}`);
+      console.log(`Verification URL: http://localhost:5000/verify-email?token=${token}`);
+      console.log("⚠️  In production, this would be sent via email service");
+      
+      res.json({ 
+        message: "Verification email sent",
+        // For development only - remove in production
+        developmentToken: token
+      });
+    } catch (error) {
+      console.error("Send verification email error:", error);
+      res.status(500).json({ message: "Failed to send verification email" });
+    }
+  });
+
+  // Verify email token
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
+      }
+      
+      const user = await storage.verifyEmailToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+      
+      res.json({ 
+        message: "Email verified successfully",
+        user: { id: user.id, email: user.email, emailVerified: user.emailVerified }
+      });
+    } catch (error) {
+      console.error("Verify email error:", error);
+      res.status(500).json({ message: "Failed to verify email" });
+    }
+  });
+
+  // Check verification status
+  app.get("/api/auth/verification-status/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ 
+        emailVerified: user.emailVerified,
+        email: user.email
+      });
+    } catch (error) {
+      console.error("Check verification status error:", error);
+      res.status(500).json({ message: "Failed to check verification status" });
+    }
+  });
+
   // User routes
   app.post("/api/users", async (req, res) => {
     try {

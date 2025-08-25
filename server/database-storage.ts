@@ -76,6 +76,60 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  // Email verification methods
+  async generateEmailVerificationToken(userId: string): Promise<string> {
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+    
+    await db
+      .update(users)
+      .set({
+        emailVerificationToken: token,
+        emailVerificationTokenExpiry: expiry,
+      })
+      .where(eq(users.id, userId));
+    
+    return token;
+  }
+
+  async verifyEmailToken(token: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.emailVerificationToken, token));
+    
+    if (!user || !user.emailVerificationTokenExpiry) {
+      return null;
+    }
+    
+    // Check if token is expired
+    if (new Date() > user.emailVerificationTokenExpiry) {
+      return null;
+    }
+    
+    // Mark email as verified and clear token
+    const [verifiedUser] = await db
+      .update(users)
+      .set({
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationTokenExpiry: null,
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+    
+    return verifiedUser;
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.emailVerificationToken, token));
+    
+    return user || null;
+  }
+
   // Campaigns
   async getCampaign(id: string): Promise<Campaign | undefined> {
     const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));

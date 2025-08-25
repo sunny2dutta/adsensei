@@ -8,6 +8,12 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  authenticateUser(email: string, password: string): Promise<User | null>;
+  
+  // Email verification methods
+  generateEmailVerificationToken(userId: string): Promise<string>;
+  verifyEmailToken(token: string): Promise<User | null>;
+  getUserByVerificationToken(token: string): Promise<User | null>;
 
   // Campaigns
   getCampaign(id: string): Promise<Campaign | undefined>;
@@ -113,6 +119,9 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      emailVerified: false,
+      emailVerificationToken: null,
+      emailVerificationTokenExpiry: null,
       instagramConnected: false,
       instagramAccessToken: null,
       instagramAccountId: null,
@@ -120,6 +129,41 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async authenticateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.getUserByEmail(email);
+    if (!user || user.password !== password) return null;
+    return user;
+  }
+
+  // Email verification methods (stub implementations for MemStorage)
+  async generateEmailVerificationToken(userId: string): Promise<string> {
+    const token = Math.random().toString(36).substring(2, 15);
+    const user = this.users.get(userId);
+    if (user) {
+      user.emailVerificationToken = token;
+      user.emailVerificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      this.users.set(userId, user);
+    }
+    return token;
+  }
+
+  async verifyEmailToken(token: string): Promise<User | null> {
+    const user = Array.from(this.users.values()).find(u => u.emailVerificationToken === token);
+    if (!user || !user.emailVerificationTokenExpiry) return null;
+    
+    if (new Date() > user.emailVerificationTokenExpiry) return null;
+    
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationTokenExpiry = null;
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | null> {
+    return Array.from(this.users.values()).find(u => u.emailVerificationToken === token) || null;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {

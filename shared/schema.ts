@@ -8,6 +8,9 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationTokenExpiry: timestamp("email_verification_token_expiry"),
   companyName: text("company_name"),
   brandType: text("brand_type"), // luxury, sustainable, streetwear, etc.
   instagramConnected: boolean("instagram_connected").default(false),
