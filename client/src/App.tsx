@@ -42,17 +42,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
       {/* Public routes */}
       <Route path="/">
-        <Navigation />
-        <Landing />
+        {!isLoading && isAuthenticated ? (
+          <Redirect to="/dashboard" />
+        ) : (
+          <>
+            <Navigation />
+            <Landing />
+          </>
+        )}
       </Route>
       <Route path="/login">
-        {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
+        <Login />
       </Route>
       <Route path="/onboarding" component={Onboarding} />
       

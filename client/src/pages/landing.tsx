@@ -77,7 +77,13 @@ export default function Landing() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate("/login")}
+                onClick={() => {
+                  // Clear any existing auth state to ensure clean login
+                  localStorage.removeItem('isAuthenticated');
+                  localStorage.removeItem('currentUserId');
+                  localStorage.removeItem('currentUser');
+                  navigate("/login");
+                }}
                 className="border-2 border-sage text-sage hover:bg-sage hover:text-white px-8 py-6 text-lg"
                 data-testid="button-sign-in"
               >
