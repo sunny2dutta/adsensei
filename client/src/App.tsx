@@ -46,7 +46,13 @@ function Router() {
 
   return (
     <Switch>
-      {/* Public routes */}
+      {/* Public routes - always accessible */}
+      <Route path="/login">
+        <Login />
+      </Route>
+      <Route path="/onboarding" component={Onboarding} />
+      
+      {/* Home route */}
       <Route path="/">
         {!isLoading && isAuthenticated ? (
           <Redirect to="/dashboard" />
@@ -57,10 +63,6 @@ function Router() {
           </>
         )}
       </Route>
-      <Route path="/login">
-        <Login />
-      </Route>
-      <Route path="/onboarding" component={Onboarding} />
       
       {/* Protected routes */}
       <Route path="/dashboard">
