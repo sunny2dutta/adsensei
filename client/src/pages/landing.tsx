@@ -78,11 +78,10 @@ export default function Landing() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  // Clear any existing auth state to ensure clean login
-                  localStorage.removeItem('isAuthenticated');
-                  localStorage.removeItem('currentUserId');
-                  localStorage.removeItem('currentUser');
-                  navigate("/login");
+                  // Clear all auth state
+                  localStorage.clear();
+                  // Force navigate to login
+                  window.location.href = "/login";
                 }}
                 className="border-2 border-sage text-sage hover:bg-sage hover:text-white px-8 py-6 text-lg"
                 data-testid="button-sign-in"
