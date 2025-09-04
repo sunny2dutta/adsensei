@@ -14,6 +14,7 @@ import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 import Navigation from "@/components/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -98,12 +99,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
