@@ -18,8 +18,33 @@ export function useAuth() {
     setIsLoading(false);
   }, []);
 
-  const login = () => {
+  // Listen for storage changes to react to login/logout in other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'isAuthenticated') {
+        const authStatus = e.newValue === 'true';
+        setIsAuthenticated(authStatus);
+        
+        if (authStatus) {
+          const stored = localStorage.getItem('currentUser');
+          setUser(stored ? JSON.parse(stored) : null);
+        } else {
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const login = (userData?: any) => {
     localStorage.setItem('isAuthenticated', 'true');
+    if (userData) {
+      localStorage.setItem('currentUserId', userData.id);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      setUser(userData);
+    }
     setIsAuthenticated(true);
   };
 

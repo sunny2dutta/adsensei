@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 async function apiRequest(method: string, endpoint: string, data?: any) {
   const response = await fetch(endpoint, {
@@ -24,6 +25,7 @@ async function apiRequest(method: string, endpoint: string, data?: any) {
 
 export default function Login() {
   const [, navigate] = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,10 +36,8 @@ export default function Login() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Store authentication state and user information
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('currentUserId', data.user.id);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      // Use the login function from useAuth to properly update state
+      login(data.user);
       navigate("/dashboard");
     },
     onError: (error: Error) => {
