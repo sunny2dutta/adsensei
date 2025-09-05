@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateAdCopy, generateCampaignInsights, generateCampaignSuggestions } from "./lib/openai";
@@ -609,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Static file serving for generated ads
-  app.use("/static/generated_ads", require("express").static("python_services/generated_ads"));
+  app.use("/static/generated_ads", express.static("python_services/generated_ads"));
 
   const httpServer = createServer(app);
   return httpServer;
