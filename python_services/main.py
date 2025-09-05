@@ -49,6 +49,20 @@ async def evaluate_ad(request: AdEvaluationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/")
+async def root():
+    return {
+        "service": "AI Ad Generation Service",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "generate_ad": "/generate-ad-image",
+            "evaluate_ad": "/evaluate-ad", 
+            "health": "/health",
+            "docs": "/docs"
+        }
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "AI Ad Generation"}

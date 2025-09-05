@@ -1,44 +1,18 @@
 import os
 import time
 import uuid
-from PIL import Image, ImageDraw, ImageFont
-from typing import Dict, List, Optional, Any
 import requests
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from typing import Dict, List, Optional, Any
 import openai
-from diffusers import StableDiffusionPipeline
-import torch
-from models.schemas import Platform, AdStyle, GeneratedAd
+from models.schemas import Platform, AdStyle, GeneratedAd, PLATFORM_SPECS
 
 class AdImageGenerator:
     def __init__(self):
         self.openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.pipeline = None
-        self.platform_dimensions = {
-            Platform.INSTAGRAM: {"width": 1080, "height": 1080},
-            Platform.INSTAGRAM_STORY: {"width": 1080, "height": 1920},
-            Platform.TIKTOK: {"width": 1080, "height": 1920},
-            Platform.FACEBOOK: {"width": 1200, "height": 630},
-            Platform.PINTEREST: {"width": 1000, "height": 1500}
-        }
         self.output_dir = "generated_ads"
         os.makedirs(self.output_dir, exist_ok=True)
         
-    async def initialize_pipeline(self):
-        """Initialize the Stable Diffusion pipeline"""
-        if self.pipeline is None:
-            def load_pipeline():
-                return StableDiffusionPipeline.from_pretrained(
-                    "runwayml/stable-diffusion-v1-5",
-                    torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
-                ).to(self.device)
-            
-            loop = asyncio.get_event_loop()
-            with ThreadPoolExecutor() as executor:
-                self.pipeline = await loop.run_in_executor(executor, load_pipeline)
-
     def enhance_prompt_for_ads(self, prompt: str, style: AdStyle, platform: Platform) -> str:
         """Enhance the user prompt with style and platform-specific details"""
         style_prompts = {
@@ -49,36 +23,76 @@ class AdImageGenerator:
             AdStyle.BOLD: "vibrant colors, high contrast, dynamic composition, energetic"
         }
         
-        platform_prompts = {
-            Platform.INSTAGRAM: "Instagram-ready, square format, eye-catching",
-            Platform.INSTAGRAM_STORY: "vertical story format, mobile-optimized",
-            Platform.TIKTOK: "vertical video-style, trendy, Gen-Z appealing",
-            Platform.FACEBOOK: "horizontal format, professional, engaging",
-            Platform.PINTEREST: "pin-worthy, vertical format, inspiring"
-        }
+        platform_suffix = PLATFORM_SPECS[platform]["prompt_suffix"]
+        style_suffix = style_prompts[style]
         
-        enhanced_prompt = f"{prompt}, {style_prompts[style]}, {platform_prompts[platform]}, advertising photography, professional quality, product photography style, commercial use, 4K resolution"
+        enhanced_prompt = f"{prompt}, {style_suffix}, {platform_suffix}, advertising photography, professional quality, product photography style, commercial use, high resolution"
         
         return enhanced_prompt
 
     async def generate_base_image(self, prompt: str, dimensions: Dict[str, int]) -> Image.Image:
-        """Generate base image using Stable Diffusion"""
-        await self.initialize_pipeline()
+        """Generate base image using OpenAI DALL-E"""
+        # DALL-E 3 supports 1024x1024, 1024x1792, or 1792x1024
+        width, height = dimensions["width"], dimensions["height"]
         
-        def generate():
-            return self.pipeline(
+        # Map to closest DALL-E supported size
+        if width == height:
+            dalle_size = "1024x1024"
+        elif height > width:
+            dalle_size = "1024x1792"
+        else:
+            dalle_size = "1792x1024"
+        
+        try:
+            response = self.openai_client.images.generate(
+                model="dall-e-3",
                 prompt=prompt,
-                width=dimensions["width"],
-                height=dimensions["height"],
-                num_inference_steps=30,
-                guidance_scale=7.5
-            ).images[0]
+                size=dalle_size,
+                quality="hd",
+                n=1,
+            )
+            
+            image_url = response.data[0].url
+            
+            # Download the image
+            img_response = requests.get(image_url)
+            img_response.raise_for_status()
+            
+            # Open and resize to exact dimensions if needed
+            image = Image.open(requests.get(image_url, stream=True).raw)
+            
+            if image.size != (width, height):
+                image = self.resize_and_crop(image, width, height)
+            
+            return image
+            
+        except Exception as e:
+            print(f"DALL-E generation failed: {e}")
+            # Fallback to solid color placeholder
+            return Image.new('RGB', (width, height), color='lightblue')
+
+    def resize_and_crop(self, image: Image.Image, target_width: int, target_height: int) -> Image.Image:
+        """Resize and crop image to exact dimensions while maintaining aspect ratio"""
+        # Calculate ratios
+        img_width, img_height = image.size
+        width_ratio = target_width / img_width
+        height_ratio = target_height / img_height
         
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            image = await loop.run_in_executor(executor, generate)
+        # Use the larger ratio to ensure the image covers the target area
+        ratio = max(width_ratio, height_ratio)
         
-        return image
+        # Resize
+        new_width = int(img_width * ratio)
+        new_height = int(img_height * ratio)
+        resized = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Crop to exact dimensions from center
+        left = (new_width - target_width) // 2
+        top = (new_height - target_height) // 2
+        right = left + target_width
+        bottom = top + target_height
+        
+        return resized.crop((left, top, right, bottom))
 
     def add_text_overlay(self, image: Image.Image, text: str, 
                         brand_colors: List[str], platform: Platform) -> Image.Image:
@@ -127,18 +141,47 @@ class AdImageGenerator:
 
     def optimize_for_platform(self, image: Image.Image, platform: Platform) -> Image.Image:
         """Apply platform-specific optimizations"""
-        # Enhance contrast and saturation for better social media performance
-        from PIL import ImageEnhance
+        spec = PLATFORM_SPECS[platform]
         
-        # Slight saturation boost for social media
-        enhancer = ImageEnhance.Color(image)
-        image = enhancer.enhance(1.1)
+        # Apply platform-specific enhancements
+        if "saturation_boost" in spec:
+            enhancer = ImageEnhance.Color(image)
+            image = enhancer.enhance(spec["saturation_boost"])
         
-        # Slight contrast boost
+        if "brightness_boost" in spec:
+            enhancer = ImageEnhance.Brightness(image)
+            image = enhancer.enhance(spec["brightness_boost"])
+        
+        # General social media optimization
         enhancer = ImageEnhance.Contrast(image)
         image = enhancer.enhance(1.05)
         
         return image
+
+    def save_optimized_image(self, image: Image.Image, image_path: str, platform: Platform) -> Dict[str, Any]:
+        """Save image with platform-specific optimization"""
+        spec = PLATFORM_SPECS[platform]
+        max_size_bytes = spec["max_file_size_mb"] * 1024 * 1024
+        compression = spec["compression"]
+        
+        # Try different quality settings to meet file size requirements
+        quality = compression
+        while quality > 10:
+            image.save(image_path, "PNG", quality=quality, optimize=True)
+            
+            # Check file size
+            file_size = os.path.getsize(image_path)
+            
+            if file_size <= max_size_bytes:
+                break
+            
+            quality -= 10
+        
+        return {
+            "final_quality": quality,
+            "file_size_mb": file_size / (1024 * 1024),
+            "within_limits": file_size <= max_size_bytes
+        }
 
     async def generate_ad_image(self, prompt: str, platform: Platform,
                               brand_colors: Optional[List[str]] = None,
@@ -148,9 +191,12 @@ class AdImageGenerator:
         """Main method to generate a complete ad image"""
         start_time = time.time()
         
+        # Get platform specs
+        spec = PLATFORM_SPECS[platform]
+        
         # Set dimensions
         if dimensions is None:
-            dimensions = self.platform_dimensions[platform]
+            dimensions = {"width": spec["dimensions"][0], "height": spec["dimensions"][1]}
         
         # Set default brand colors
         if brand_colors is None:
@@ -173,7 +219,8 @@ class AdImageGenerator:
         image_id = str(uuid.uuid4())
         image_filename = f"{image_id}_{platform.value}.png"
         image_path = os.path.join(self.output_dir, image_filename)
-        image.save(image_path, "PNG", quality=95)
+        
+        save_result = self.save_optimized_image(image, image_path, platform)
         
         generation_time = time.time() - start_time
         
@@ -189,7 +236,8 @@ class AdImageGenerator:
                 "style": style.value,
                 "brand_colors": brand_colors,
                 "text_overlay": text_overlay,
-                "image_id": image_id
+                "image_id": image_id,
+                "optimization_result": save_result
             }
         )
 
