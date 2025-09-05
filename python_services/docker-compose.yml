@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ai-ad-service:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=8001
+    volumes:
+      - ./generated_ads:/app/generated_ads
+      - ./models_cache:/app/models_cache
+      - ./temp:/app/temp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G

@@ -6,6 +6,7 @@ import { generateInstagramAuthUrl, exchangeCodeForToken, publishToInstagram, get
 import { insertCampaignSchema, insertMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import axios from "axios";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -553,6 +554,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error generating campaign suggestions: " + (error as Error).message });
     }
   });
+
+  // AI Ad Image Generation Routes
+  app.post("/api/generate-ad-image", async (req, res) => {
+    try {
+      const generateImageSchema = z.object({
+        prompt: z.string(),
+        platform: z.enum(["instagram", "instagram_story", "tiktok", "facebook", "pinterest"]),
+        text_overlay: z.string().optional(),
+        brand_colors: z.array(z.string()).optional(),
+        style: z.enum(["minimalist", "luxury", "street", "sustainable", "bold"]).optional()
+      });
+
+      const requestData = generateImageSchema.parse(req.body);
+      
+      // Call Python service
+      const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
+      const response = await axios.post(`${pythonServiceUrl}/generate-ad-image`, requestData);
+      
+      if (response.data.success) {
+        res.json(response.data.data);
+      } else {
+        throw new Error("Python service returned error");
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error generating ad image: " + (error as Error).message });
+    }
+  });
+
+  app.post("/api/evaluate-ad", async (req, res) => {
+    try {
+      const evaluateAdSchema = z.object({
+        image_path: z.string(),
+        text_content: z.string(),
+        platform: z.enum(["instagram", "instagram_story", "tiktok", "facebook", "pinterest"]),
+        target_audience: z.string(),
+        brand_name: z.string().optional()
+      });
+
+      const requestData = evaluateAdSchema.parse(req.body);
+      
+      // Call Python service
+      const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
+      const response = await axios.post(`${pythonServiceUrl}/evaluate-ad`, requestData);
+      
+      if (response.data.success) {
+        res.json(response.data.data);
+      } else {
+        throw new Error("Python service returned error");
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error evaluating ad: " + (error as Error).message });
+    }
+  });
+
+  // Static file serving for generated ads
+  app.use("/static/generated_ads", require("express").static("python_services/generated_ads"));
 
   const httpServer = createServer(app);
   return httpServer;

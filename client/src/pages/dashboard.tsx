@@ -1,7 +1,9 @@
 import Hero from "@/components/hero";
 import AICopyGenerator from "@/components/ai-copy-generator";
+import AIImageGenerator from "@/components/ai-image-generator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Eye, TrendingUp, Store, Brain, Rocket } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -115,7 +117,21 @@ export default function Dashboard() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            <AICopyGenerator />
+            {/* AI Generation Tools */}
+            <div className="lg:col-span-2">
+              <Tabs defaultValue="copy" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="copy">AI Copy Generator</TabsTrigger>
+                  <TabsTrigger value="image">AI Image Generator</TabsTrigger>
+                </TabsList>
+                <TabsContent value="copy">
+                  <AICopyGenerator />
+                </TabsContent>
+                <TabsContent value="image">
+                  <AIImageGenerator />
+                </TabsContent>
+              </Tabs>
+            </div>
 
             {/* Quick Stats & Actions */}
             <div className="space-y-6">
