@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import CampaignCard from "@/components/campaign-card";
 import InstagramConnect from "@/components/instagram-connect";
 import { Plus, Search, Filter, Instagram } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Campaigns() {
   const { toast } = useToast();
@@ -21,9 +22,14 @@ export default function Campaigns() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { user } = useAuth();
 
-  // Mock user ID - in real app this would come from auth context
-  const userId = "mock-user-id";
+  // Get current user ID from auth context
+  const userId = user?.id || localStorage.getItem('currentUserId');
+
+  if (!userId) {
+    return <div className="flex items-center justify-center min-h-screen">Please log in to view campaigns.</div>;
+  }
 
   const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns", userId],
@@ -35,7 +41,7 @@ export default function Campaigns() {
   });
 
   // Get user data to check Instagram connection status
-  const { data: user } = useQuery<User>({
+  const { data: currentUserData } = useQuery<User>({
     queryKey: ['/api/users', userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -388,7 +394,7 @@ export default function Campaigns() {
               campaign={campaign}
               onToggleStatus={handleToggleStatus}
               onDelete={handleDelete}
-              userInstagramConnected={user?.instagramConnected || false}
+              userInstagramConnected={currentUserData?.instagramConnected || false}
             />
           ))}
         </div>
