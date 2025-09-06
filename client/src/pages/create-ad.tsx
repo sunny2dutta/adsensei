@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { Sparkles, Zap, Target, Instagram, ArrowRight, User, Mail, Lock } from "lucide-react";
+import { Sparkles, Zap, Target, Instagram, ArrowRight, User, Mail, Lock, Store, Package } from "lucide-react";
 
 const adCreationSchema = z.object({
   productName: z.string().min(1, "Product name is required"),
@@ -45,7 +45,7 @@ interface GeneratedAd {
 export default function CreateAd() {
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
-  const [step, setStep] = useState<'create' | 'preview' | 'signup' | 'saved'>('create');
+  const [step, setStep] = useState<'choose' | 'create' | 'preview' | 'signup' | 'saved'>('choose');
   const [generatedAd, setGeneratedAd] = useState<GeneratedAd | null>(null);
   const [adData, setAdData] = useState<AdCreationForm | null>(null);
 
@@ -74,7 +74,7 @@ export default function CreateAd() {
   // Generate ad copy mutation
   const generateAdMutation = useMutation({
     mutationFn: async (data: AdCreationForm) => {
-      const response = await apiRequest('POST', '/api/campaigns/generate-ad-copy', {
+      const response = await apiRequest('POST', '/api/generate-ad-copy', {
         brandType: 'fashion',
         brandName: data.productName,
         productCategory: 'Fashion',
@@ -171,6 +171,90 @@ export default function CreateAd() {
   const handleSignUp = (data: SignUpForm) => {
     createAccountMutation.mutate(data);
   };
+
+  if (step === 'choose') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cream via-white to-sage/10">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <Sparkles className="w-16 h-16 text-sage mx-auto mb-4" />
+              <h1 className="text-4xl font-bold text-navy mb-4">Create Your First Ad</h1>
+              <p className="text-xl text-charcoal/70">
+                Choose how you'd like to get started
+              </p>
+            </div>
+
+            <div className="grid gap-6">
+              {/* Manual Ad Creation Option */}
+              <Card className="border-2 border-sage/20 hover:border-sage transition-colors cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-sage/10 rounded-lg flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors">
+                      <Zap className="h-6 w-6 text-sage group-hover:text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-navy mb-2">Enter Product Details Manually</h3>
+                      <p className="text-charcoal/70 mb-4">
+                        Input your product information and let our AI generate platform-specific ads for Google, Meta, and TikTok.
+                      </p>
+                      <div className="flex items-center text-sm text-sage">
+                        <Target className="h-4 w-4 mr-1" />
+                        Quick setup, AI-powered copy generation
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setStep('create')}
+                    className="w-full mt-4 bg-sage hover:bg-sage/90 text-white"
+                    data-testid="button-manual-creation"
+                  >
+                    <Zap className="mr-2 h-4 w-4" />
+                    Enter Product Details
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Shopify Integration Option */}
+              <Card className="border-2 border-coral/20 hover:border-coral transition-colors cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-coral/10 rounded-lg flex items-center justify-center group-hover:bg-coral group-hover:text-white transition-colors">
+                      <Store className="h-6 w-6 text-coral group-hover:text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-navy mb-2">Import from Shopify Store</h3>
+                      <p className="text-charcoal/70 mb-4">
+                        Connect your Shopify store to import products with images, pricing, and descriptions automatically.
+                      </p>
+                      <div className="flex items-center text-sm text-coral">
+                        <Package className="h-4 w-4 mr-1" />
+                        Automatic import, bulk ad generation
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = '/products'}
+                    className="w-full mt-4 bg-coral hover:bg-coral/90 text-white"
+                    data-testid="button-shopify-integration"
+                  >
+                    <Store className="mr-2 h-4 w-4" />
+                    Connect Shopify Store
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center mt-6">
+              <p className="text-sm text-charcoal/60">
+                Don't worry - you can always switch between methods later
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'create') {
     return (
