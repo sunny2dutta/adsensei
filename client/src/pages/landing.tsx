@@ -68,11 +68,11 @@ export default function Landing() {
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/create-ad")}
                 className="bg-gradient-to-r from-sage to-coral hover:from-sage/90 hover:to-coral/90 text-white px-8 py-6 text-lg shadow-lg"
                 data-testid="button-get-started"
               >
-                Get Started Free
+                Create Your First Ad
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -213,11 +213,11 @@ export default function Landing() {
               </div>
               
               <Button
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/create-ad")}
                 className="w-full bg-gradient-to-r from-sage via-coral to-golden hover:from-sage/90 hover:via-coral/90 hover:to-golden/90 text-white py-6 text-lg shadow-lg hover:shadow-xl transition-all"
                 data-testid="button-cta-get-started"
               >
-                Start Your Free Trial
+                Create Your First Ad Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               
@@ -241,11 +241,11 @@ export default function Landing() {
             Join the AI revolution in fashion marketing. Generate campaigns, create content, and grow your brand.
           </p>
           <Button
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate("/create-ad")}
             className="bg-gradient-to-r from-sage via-coral to-golden hover:from-sage/90 hover:via-coral/90 hover:to-golden/90 text-white px-8 py-6 text-lg shadow-2xl hover:shadow-3xl transition-all hover:scale-105"
             data-testid="button-footer-cta"
           >
-            Get Started Now
+            Create Your First Ad
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

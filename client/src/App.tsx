@@ -11,6 +11,7 @@ import Templates from "@/pages/templates";
 import Analytics from "@/pages/analytics";
 import Clients from "@/pages/clients";
 import Products from "@/pages/products";
+import CreateAd from "@/pages/create-ad";
 import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 import Navigation from "@/components/navigation";
@@ -53,6 +54,7 @@ function Router() {
         <Login />
       </Route>
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/create-ad" component={CreateAd} />
       
       {/* Home route */}
       <Route path="/">

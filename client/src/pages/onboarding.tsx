@@ -580,7 +580,7 @@ export default function Onboarding() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => window.location.href = '/campaigns'}
+                    onClick={() => window.location.href = '/create-ad'}
                     className="w-full mt-4 bg-sage hover:bg-sage/90 text-white"
                     data-testid="button-manual-ad-creation"
                   >
