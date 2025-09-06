@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Target, Zap, Users, ArrowRight, CheckCircle, Instagram, TrendingUp } from "lucide-react";
+import { Sparkles, Target, Zap, Users, ArrowRight, CheckCircle, Instagram, TrendingUp, Video } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Landing() {
@@ -20,9 +20,9 @@ export default function Landing() {
       color: "bg-coral/10 text-coral"
     },
     {
-      icon: Instagram,
-      title: "Direct Instagram Publishing",
-      description: "Connect your Instagram account and publish campaigns instantly with optimized captions.",
+      icon: Video,
+      title: "Multi-Platform Publishing",
+      description: "Connect your Instagram and TikTok accounts and publish campaigns instantly with optimized captions.",
       color: "bg-golden/10 text-golden"
     },
     {
@@ -35,7 +35,7 @@ export default function Landing() {
 
   const benefits = [
     "AI-powered campaign creation in minutes",
-    "Direct Instagram publishing integration",
+    "Direct Instagram & TikTok publishing integration",
     "Smart demographic targeting",
     "Campaign performance analytics",
     "Brand-specific content generation",
@@ -62,7 +62,7 @@ export default function Landing() {
             </h1>
             
             <p className="text-xl text-charcoal/70 mb-8 leading-relaxed">
-              Create compelling campaigns, generate AI-powered ad copy, and publish directly to Instagram. 
+              Create compelling campaigns, generate AI-powered ad copy, and publish directly to Instagram & TikTok. 
               Everything you need to grow your D2C fashion brand with intelligent marketing automation.
             </p>
 
