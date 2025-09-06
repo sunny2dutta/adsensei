@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Campaign, type InsertCampaign, type Template, type InsertTemplate, type CampaignMetrics, type InsertCampaignMetrics, type Message, type InsertMessage } from "@shared/schema";
+import { type User, type InsertUser, type Campaign, type InsertCampaign, type Template, type InsertTemplate, type CampaignMetrics, type InsertCampaignMetrics, type Message, type InsertMessage, type ShopifyProduct, type InsertShopifyProduct } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -36,6 +36,13 @@ export interface IStorage {
   // Messages
   getMessagesByCampaignId(campaignId: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+
+  // Shopify Products
+  getShopifyProduct(id: string): Promise<ShopifyProduct | undefined>;
+  getShopifyProducts(userId: string): Promise<ShopifyProduct[]>;
+  createShopifyProduct(product: InsertShopifyProduct): Promise<ShopifyProduct>;
+  updateShopifyProduct(id: string, updates: Partial<ShopifyProduct>): Promise<ShopifyProduct | undefined>;
+  deleteShopifyProduct(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -44,6 +51,7 @@ export class MemStorage implements IStorage {
   private templates: Map<string, Template>;
   private campaignMetrics: Map<string, CampaignMetrics>;
   private messages: Map<string, Message>;
+  private shopifyProducts: Map<string, ShopifyProduct>;
 
   constructor() {
     this.users = new Map();
@@ -51,6 +59,7 @@ export class MemStorage implements IStorage {
     this.templates = new Map();
     this.campaignMetrics = new Map();
     this.messages = new Map();
+    this.shopifyProducts = new Map();
     this.seedData();
   }
 
@@ -125,6 +134,9 @@ export class MemStorage implements IStorage {
       instagramConnected: false,
       instagramAccessToken: null,
       instagramAccountId: null,
+      shopifyConnected: false,
+      shopifyStoreDomain: null,
+      shopifyAccessToken: null,
       createdAt: new Date()
     };
     this.users.set(id, user);
@@ -281,6 +293,44 @@ export class MemStorage implements IStorage {
     };
     this.messages.set(id, message);
     return message;
+  }
+
+  // Shopify Products
+  async getShopifyProduct(id: string): Promise<ShopifyProduct | undefined> {
+    return this.shopifyProducts.get(id);
+  }
+
+  async getShopifyProducts(userId: string): Promise<ShopifyProduct[]> {
+    return Array.from(this.shopifyProducts.values()).filter(product => product.userId === userId);
+  }
+
+  async createShopifyProduct(insertProduct: InsertShopifyProduct): Promise<ShopifyProduct> {
+    const id = randomUUID();
+    const product: ShopifyProduct = {
+      ...insertProduct,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.shopifyProducts.set(id, product);
+    return product;
+  }
+
+  async updateShopifyProduct(id: string, updates: Partial<ShopifyProduct>): Promise<ShopifyProduct | undefined> {
+    const product = this.shopifyProducts.get(id);
+    if (!product) return undefined;
+
+    const updatedProduct: ShopifyProduct = {
+      ...product,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.shopifyProducts.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async deleteShopifyProduct(id: string): Promise<boolean> {
+    return this.shopifyProducts.delete(id);
   }
 }
 

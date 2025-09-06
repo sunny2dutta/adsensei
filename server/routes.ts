@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateAdCopy, generateCampaignInsights, generateCampaignSuggestions } from "./lib/openai";
 import { generateInstagramAuthUrl, exchangeCodeForToken, publishToInstagram, getInstagramAccount, formatInstagramCaption, validateImageUrl } from "./lib/instagram";
-import { insertCampaignSchema, insertMessageSchema, insertUserSchema } from "@shared/schema";
+import { insertCampaignSchema, insertMessageSchema, insertUserSchema, insertShopifyProductSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import axios from "axios";
@@ -630,6 +630,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: "Error evaluating ad: " + (error as Error).message });
+    }
+  });
+
+  // Shopify Integration Routes
+  app.post("/api/shopify/connect", async (req, res) => {
+    try {
+      const connectSchema = z.object({
+        userId: z.string(),
+        storeDomain: z.string(),
+        accessToken: z.string()
+      });
+
+      const { userId, storeDomain, accessToken } = connectSchema.parse(req.body);
+      
+      // Verify the Shopify connection by making a test API call
+      try {
+        const shopifyResponse = await axios.get(`https://${storeDomain}.myshopify.com/admin/api/2024-01/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (shopifyResponse.data.shop) {
+          // Update user with Shopify connection info
+          await storage.updateUser(userId, {
+            shopifyConnected: true,
+            shopifyStoreDomain: storeDomain,
+            shopifyAccessToken: accessToken
+          });
+
+          res.json({ 
+            message: "Shopify store connected successfully",
+            shop: shopifyResponse.data.shop
+          });
+        } else {
+          throw new Error("Invalid Shopify connection");
+        }
+      } catch (shopifyError) {
+        throw new Error("Failed to connect to Shopify store. Please check your credentials.");
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error connecting Shopify: " + (error as Error).message });
+    }
+  });
+
+  app.post("/api/shopify/sync-products", async (req, res) => {
+    try {
+      const syncSchema = z.object({
+        userId: z.string()
+      });
+
+      const { userId } = syncSchema.parse(req.body);
+      
+      // Get user's Shopify connection info
+      const user = await storage.getUser(userId);
+      if (!user?.shopifyConnected || !user.shopifyStoreDomain || !user.shopifyAccessToken) {
+        return res.status(400).json({ message: "Shopify not connected" });
+      }
+
+      // Fetch products from Shopify
+      const shopifyResponse = await axios.get(
+        `https://${user.shopifyStoreDomain}.myshopify.com/admin/api/2024-01/products.json?limit=250`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': user.shopifyAccessToken,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const products = shopifyResponse.data.products;
+      let syncCount = 0;
+
+      // Save products to database
+      for (const product of products) {
+        try {
+          const productData = {
+            userId,
+            shopifyProductId: product.id.toString(),
+            title: product.title,
+            description: product.body_html || product.description,
+            vendor: product.vendor,
+            productType: product.product_type,
+            tags: product.tags ? product.tags.split(',').map((tag: string) => tag.trim()) : [],
+            images: product.images?.map((img: any) => ({
+              id: img.id,
+              src: img.src,
+              alt: img.alt
+            })) || [],
+            variants: product.variants?.map((variant: any) => ({
+              id: variant.id,
+              title: variant.title,
+              price: Math.round(parseFloat(variant.price) * 100), // Convert to cents
+              compareAtPrice: variant.compare_at_price ? Math.round(parseFloat(variant.compare_at_price) * 100) : null,
+              inventoryQuantity: variant.inventory_quantity
+            })) || [],
+            price: product.variants?.[0] ? Math.round(parseFloat(product.variants[0].price) * 100) : 0,
+            compareAtPrice: product.variants?.[0]?.compare_at_price ? Math.round(parseFloat(product.variants[0].compare_at_price) * 100) : null,
+            inventoryQuantity: product.variants?.[0]?.inventory_quantity || 0,
+            handle: product.handle,
+            seoTitle: product.title,
+            seoDescription: product.body_html || product.description
+          };
+
+          await storage.createShopifyProduct(productData);
+          syncCount++;
+        } catch (productError) {
+          console.error(`Error syncing product ${product.id}:`, productError);
+        }
+      }
+
+      res.json({ 
+        message: `Successfully synced ${syncCount} products`,
+        syncCount,
+        totalProducts: products.length
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error syncing products: " + (error as Error).message });
+    }
+  });
+
+  app.get("/api/shopify/products/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const products = await storage.getShopifyProducts(userId);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching products: " + (error as Error).message });
+    }
+  });
+
+  app.post("/api/shopify/generate-product-ads", async (req, res) => {
+    try {
+      const generateSchema = z.object({
+        productId: z.string(),
+        platforms: z.array(z.enum(["google", "meta", "tiktok"])),
+        targetAudience: z.string().optional(),
+        brandVoice: z.string().optional(),
+        languages: z.array(z.string()).optional().default(["en"])
+      });
+
+      const { productId, platforms, targetAudience, brandVoice, languages } = generateSchema.parse(req.body);
+      
+      // Get product data
+      const product = await storage.getShopifyProduct(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      const generatedAds = [];
+
+      // Generate ads for each platform
+      for (const platform of platforms) {
+        for (const language of languages) {
+          try {
+            // Enhanced prompt using product data
+            const prompt = `Create compelling ${platform} ad copy for this fashion product:
+            
+Product: ${product.title}
+Description: ${product.description}
+Price: $${(product.price / 100).toFixed(2)}
+Tags: ${product.tags?.join(', ')}
+Brand Voice: ${brandVoice || 'Professional and engaging'}
+Target Audience: ${targetAudience || 'Fashion-forward consumers'}
+Language: ${language}
+
+Generate platform-specific copy that highlights the product's unique features and drives conversions.`;
+
+            const adCopy = await generateAdCopy({
+              brandType: 'fashion',
+              brandName: 'Fashion Brand',
+              productCategory: product.productType || 'Fashion',
+              targetAudience: targetAudience || 'Fashion-forward consumers',
+              platform,
+              campaignObjective: 'conversion',
+              brandValues: brandVoice || 'professional',
+              tone: brandVoice || 'professional'
+            });
+
+            // Generate SEO description for the product
+            let seoDescription = `Discover ${product.title} - ${product.description?.substring(0, 120)}... Perfect for ${targetAudience || 'fashion lovers'}. Shop now!`;
+            
+            if (language !== 'en') {
+              const seoAdCopy = await generateAdCopy({
+                brandType: 'fashion',
+                brandName: 'Fashion Brand',
+                productCategory: product.productType || 'Fashion',
+                targetAudience: targetAudience || 'Fashion-forward consumers',
+                platform: 'instagram',
+                campaignObjective: 'seo',
+                brandValues: `Create SEO-friendly description in ${language}`,
+                tone: 'seo-optimized'
+              });
+              seoDescription = seoAdCopy.body;
+            }
+
+            generatedAds.push({
+              platform,
+              language,
+              adCopy: adCopy,
+              seoDescription,
+              productImages: product.images,
+              suggestedBudget: Math.max(50, Math.round(product.price / 1000)), // Suggest budget based on product price
+              targetKeywords: product.tags?.slice(0, 5) || []
+            });
+          } catch (error) {
+            console.error(`Error generating ad for ${platform} in ${language}:`, error);
+          }
+        }
+      }
+
+      // Generate bundle suggestions if multiple products available
+      const allProducts = await storage.getShopifyProducts(product.userId);
+      const bundleSuggestions = allProducts
+        .filter(p => p.id !== productId && p.tags?.some(tag => product.tags?.includes(tag)))
+        .slice(0, 3)
+        .map(p => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          commonTags: p.tags?.filter(tag => product.tags?.includes(tag))
+        }));
+
+      res.json({
+        product: {
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          images: product.images
+        },
+        generatedAds,
+        bundleSuggestions,
+        message: `Generated ${generatedAds.length} ads across ${platforms.length} platforms`
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error generating product ads: " + (error as Error).message });
     }
   });
 
