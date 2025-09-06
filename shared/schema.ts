@@ -16,6 +16,9 @@ export const users = pgTable("users", {
   instagramConnected: boolean("instagram_connected").default(false),
   instagramAccessToken: text("instagram_access_token"),
   instagramAccountId: text("instagram_account_id"),
+  shopifyConnected: boolean("shopify_connected").default(false),
+  shopifyStoreDomain: text("shopify_store_domain"),
+  shopifyAccessToken: text("shopify_access_token"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -35,6 +38,7 @@ export const campaigns = pgTable("campaigns", {
   publishedToInstagram: boolean("published_to_instagram").default(false),
   instagramPostId: text("instagram_post_id"),
   scheduledPublishDate: timestamp("scheduled_publish_date"),
+  shopifyProductId: varchar("shopify_product_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -73,6 +77,27 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const shopifyProducts = pgTable("shopify_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  shopifyProductId: text("shopify_product_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  vendor: text("vendor"),
+  productType: text("product_type"),
+  tags: text("tags").array(),
+  images: jsonb("images"), // Array of image URLs
+  variants: jsonb("variants"), // Product variants (size, color, etc.)
+  price: integer("price"), // in cents
+  compareAtPrice: integer("compare_at_price"), // in cents
+  inventoryQuantity: integer("inventory_quantity"),
+  handle: text("handle"), // URL handle
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -101,6 +126,12 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true,
 });
 
+export const insertShopifyProductSchema = createInsertSchema(shopifyProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -112,3 +143,5 @@ export type CampaignMetrics = typeof campaignMetrics.$inferSelect;
 export type InsertCampaignMetrics = z.infer<typeof insertCampaignMetricsSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type ShopifyProduct = typeof shopifyProducts.$inferSelect;
+export type InsertShopifyProduct = z.infer<typeof insertShopifyProductSchema>;
