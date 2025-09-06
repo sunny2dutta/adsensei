@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users, Lightbulb, Target, CheckCircle, Mail } from "lucide-react";
+import { ChevronRight, ChevronLeft, Store, Brain, Rocket, Crown, Leaf, Users, Lightbulb, Target, CheckCircle, Mail, Package, ShoppingBag, Zap } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
@@ -56,7 +56,7 @@ export default function Onboarding() {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   
-  const totalSteps = 6; // Added step for email verification
+  const totalSteps = 7; // Added step for choosing next action
   const progress = (currentStep / totalSteps) * 100;
 
   const form = useForm<OnboardingForm>({
@@ -255,8 +255,11 @@ export default function Onboarding() {
         isStepValid = true; // Optional fields  
         break;
       case 6:
-        // Move to campaign suggestions - already logged in
-        router.push("/dashboard");
+        isStepValid = true; // Choose action step
+        break;
+      case 7:
+        // Move to dashboard - already logged in
+        window.location.href = "/dashboard";
         return;
       default:
         isStepValid = true;
@@ -552,6 +555,91 @@ export default function Onboarding() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
+              <Rocket className="w-16 h-16 text-coral mx-auto mb-4" />
+              <h2 className="font-inter font-bold text-2xl text-navy mb-2">How would you like to get started?</h2>
+              <p className="text-charcoal/70">Choose the best way to create your first campaign</p>
+            </div>
+
+            <div className="grid gap-6">
+              {/* Manual Ad Creation Option */}
+              <Card className="border-2 border-sage/20 hover:border-sage transition-colors cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-sage/10 rounded-lg flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors">
+                      <ShoppingBag className="h-6 w-6 text-sage group-hover:text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-navy mb-2">Create Ad Manually</h3>
+                      <p className="text-charcoal/70 mb-4">
+                        Input your product details manually and let our AI generate platform-specific ads for Google, Meta, and TikTok.
+                      </p>
+                      <div className="flex items-center text-sm text-sage">
+                        <Zap className="h-4 w-4 mr-1" />
+                        Quick setup, AI-powered copy generation
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = '/campaigns'}
+                    className="w-full mt-4 bg-sage hover:bg-sage/90 text-white"
+                    data-testid="button-manual-ad-creation"
+                  >
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Create My First Ad
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Shopify Integration Option */}
+              <Card className="border-2 border-coral/20 hover:border-coral transition-colors cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-coral/10 rounded-lg flex items-center justify-center group-hover:bg-coral group-hover:text-white transition-colors">
+                      <Store className="h-6 w-6 text-coral group-hover:text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-navy mb-2">Connect Shopify Store</h3>
+                      <p className="text-charcoal/70 mb-4">
+                        Import your entire product catalog from Shopify and generate ads automatically for each product with images, pricing, and descriptions.
+                      </p>
+                      <div className="flex items-center text-sm text-coral">
+                        <Package className="h-4 w-4 mr-1" />
+                        Bulk import, automated ad generation
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = '/products'}
+                    className="w-full mt-4 bg-coral hover:bg-coral/90 text-white"
+                    data-testid="button-shopify-integration"
+                  >
+                    <Store className="mr-2 h-4 w-4" />
+                    Connect Shopify Store
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center mt-6">
+              <p className="text-sm text-charcoal/60 mb-3">
+                Don't worry - you can always switch between methods later
+              </p>
+              <Button 
+                variant="outline"
+                onClick={() => setCurrentStep(6)}
+                className="text-charcoal/70 border-charcoal/20"
+                data-testid="button-skip-to-suggestions"
+              >
+                Skip for now, see campaign suggestions
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
               <Lightbulb className="w-16 h-16 text-golden mx-auto mb-4" />
               <h2 className="font-inter font-bold text-2xl text-navy mb-2">Your Personalized Campaign Suggestions</h2>
               <p className="text-charcoal/70">Based on your brand profile, here are AI-generated campaign recommendations</p>
@@ -600,7 +688,7 @@ export default function Onboarding() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {renderStepContent()}
             
-            {currentStep < 5 && (
+            {currentStep < 6 && (
               <div className="flex justify-between mt-8">
                 <Button
                   type="button"
