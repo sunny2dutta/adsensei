@@ -20,8 +20,8 @@ export default function Landing() {
       color: "bg-coral/10 text-coral"
     },
     {
-      icon: Video,
-      title: "Multi-Platform Publishing",
+      icon: Instagram,
+      title: "Direct Instagram Publishing",
       description: "Connect your Instagram and TikTok accounts and publish campaigns instantly with optimized captions.",
       color: "bg-golden/10 text-golden"
     },
