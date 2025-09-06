@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, jsonb, boolean, serial, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -98,6 +98,16 @@ export const shopifyProducts = pgTable("shopify_products", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// System logs table for tracking service status and fallbacks
+export const systemLogs = pgTable('system_logs', {
+  id: serial('id').primaryKey(),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  level: text('level').notNull(), // 'info', 'warn', 'error'
+  service: text('service').notNull(), // 'nodejs', 'python', 'image_generation'
+  message: text('message').notNull(),
+  metadata: json('metadata'), // JSON for extra data
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -132,6 +142,11 @@ export const insertShopifyProductSchema = createInsertSchema(shopifyProducts).om
   updatedAt: true,
 });
 
+export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -145,3 +160,5 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type ShopifyProduct = typeof shopifyProducts.$inferSelect;
 export type InsertShopifyProduct = z.infer<typeof insertShopifyProductSchema>;
+export type SystemLog = typeof systemLogs.$inferSelect;
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;

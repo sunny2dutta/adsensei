@@ -3,10 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateAdCopy, generateCampaignInsights, generateCampaignSuggestions } from "./lib/openai";
 import { generateInstagramAuthUrl, exchangeCodeForToken, publishToInstagram, getInstagramAccount, formatInstagramCaption, validateImageUrl } from "./lib/instagram";
-import { insertCampaignSchema, insertMessageSchema, insertUserSchema, insertShopifyProductSchema } from "@shared/schema";
+import { insertCampaignSchema, insertMessageSchema, insertUserSchema, insertShopifyProductSchema, systemLogs } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import axios from "axios";
+import { DatabaseLogger } from "./lib/logger";
+import { db } from "./db";
+import { desc, eq, gte } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -595,22 +598,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // First try Python service
       try {
-        console.log('🐍 Attempting image generation via Python service...');
+        DatabaseLogger.imageGenerationStart('python');
         const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
         const response = await axios.post(`${pythonServiceUrl}/generate-ad-image`, requestData, {
           timeout: 30000 // 30 second timeout
         });
         
         if (response.data.success) {
-          console.log('✅ Image generated successfully via Python service');
+          DatabaseLogger.imageGenerationSuccess('python', { 
+            platform: requestData.platform, 
+            prompt: requestData.prompt.substring(0, 100) 
+          });
           res.json(response.data.data);
           return;
         } else {
           throw new Error("Python service returned error: " + JSON.stringify(response.data));
         }
       } catch (pythonError) {
-        console.warn(`⚠️ Python service failed: ${(pythonError as Error).message}`);
-        console.log('🔄 Falling back to Node.js image generation...');
+        DatabaseLogger.imageGenerationFallback((pythonError as Error).message);
         
         // Fallback to Node.js OpenAI integration
         const platformDimensions = {
@@ -661,12 +666,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         };
         
-        console.log('✅ Image generated successfully via Node.js fallback');
+        DatabaseLogger.imageGenerationSuccess('nodejs', {
+          platform: platform,
+          prompt: requestData.prompt.substring(0, 100),
+          fallback: true
+        });
         res.json(result);
       }
       
     } catch (error) {
-      console.error('💥 Both Python and Node.js image generation failed:', error);
+      DatabaseLogger.imageGenerationFailure((error as Error).message);
       res.status(500).json({ message: "Error generating ad image: " + (error as Error).message });
     }
   });
@@ -694,6 +703,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: "Error evaluating ad: " + (error as Error).message });
+    }
+  });
+
+  // System Logs Routes
+  app.get("/api/logs", async (req, res) => {
+    try {
+      const { limit = 100, level, service } = req.query;
+      
+      let query = db.select().from(systemLogs);
+      
+      // Filter by level if provided
+      if (level && typeof level === 'string') {
+        query = query.where(eq(systemLogs.level, level));
+      }
+      
+      // Filter by service if provided
+      if (service && typeof service === 'string') {
+        query = query.where(eq(systemLogs.service, service));
+      }
+      
+      const logs = await query
+        .orderBy(desc(systemLogs.timestamp))
+        .limit(Math.min(parseInt(limit as string), 1000)); // Max 1000 logs
+        
+      res.json({
+        logs,
+        total: logs.length,
+        filters: { level, service, limit }
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Error fetching logs: " + (error as Error).message 
+      });
+    }
+  });
+
+  app.get("/api/logs/stats", async (req, res) => {
+    try {
+      // Get log counts by level and service for the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const recentLogs = await db.select()
+        .from(systemLogs)
+        .where(gte(systemLogs.timestamp, twentyFourHoursAgo));
+      
+      const stats = {
+        total: recentLogs.length,
+        byLevel: {} as Record<string, number>,
+        byService: {} as Record<string, number>,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      recentLogs.forEach(log => {
+        stats.byLevel[log.level] = (stats.byLevel[log.level] || 0) + 1;
+        stats.byService[log.service] = (stats.byService[log.service] || 0) + 1;
+      });
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Error fetching log stats: " + (error as Error).message 
+      });
     }
   });
 

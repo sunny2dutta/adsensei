@@ -3,12 +3,13 @@ import { spawn } from "child_process";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupSecurity } from "./middleware/security";
+import { DatabaseLogger } from "./lib/logger";
 
 const app = express();
 
 // Start Python image generation service
 function startPythonService() {
-  log('🐍 Starting Python image generation service...');
+  DatabaseLogger.pythonServiceStart();
   
   const pythonProcess = spawn('python', ['main.py'], {
     cwd: './python_services',
@@ -19,22 +20,22 @@ function startPythonService() {
   pythonProcess.stdout?.on('data', (data) => {
     const output = data.toString();
     if (output.includes('Uvicorn running')) {
-      log('✅ Python image service started successfully on port 8001');
+      DatabaseLogger.pythonServiceSuccess();
     }
   });
   
   pythonProcess.stderr?.on('data', (data) => {
-    log(`❌ Python service error: ${data.toString().trim()}`);
+    DatabaseLogger.pythonServiceError(data.toString().trim());
   });
   
   pythonProcess.on('close', (code) => {
     if (code !== 0) {
-      log(`⚠️ Python service exited with code ${code}, using Node.js fallback for image generation`);
+      DatabaseLogger.warn('python', `Service exited with code ${code}, using Node.js fallback for image generation`);
     }
   });
   
   pythonProcess.on('error', (error) => {
-    log(`💥 Failed to start Python service: ${error.message}. Using Node.js fallback.`);
+    DatabaseLogger.error('python', `Failed to start service: ${error.message}. Using Node.js fallback.`);
   });
   
   return pythonProcess;
