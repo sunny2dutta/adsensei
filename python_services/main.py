@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from services.ad_generator import AdImageGenerator
-from services.evaluator import AdEvaluator
+# from services.evaluator import AdEvaluator  # Temporarily disabled
 from models.schemas import AdGenerationRequest, AdEvaluationRequest
 
 app = FastAPI(title="AI Ad Generation Service", version="1.0.0")
@@ -18,7 +18,7 @@ app.add_middleware(
 
 # Initialize services
 ad_generator = AdImageGenerator()
-ad_evaluator = AdEvaluator()
+# ad_evaluator = AdEvaluator()  # Temporarily disabled
 
 @app.post("/generate-ad-image")
 async def generate_ad_image(request: AdGenerationRequest):
@@ -35,19 +35,19 @@ async def generate_ad_image(request: AdGenerationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/evaluate-ad")
-async def evaluate_ad(request: AdEvaluationRequest):
-    """Evaluate the quality and effectiveness of a generated ad"""
-    try:
-        result = await ad_evaluator.evaluate_ad(
-            image_path=request.image_path,
-            text_content=request.text_content,
-            platform=request.platform,
-            target_audience=request.target_audience
-        )
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/evaluate-ad")
+# async def evaluate_ad(request: AdEvaluationRequest):
+#     """Evaluate the quality and effectiveness of a generated ad"""
+#     try:
+#         result = await ad_evaluator.evaluate_ad(
+#             image_path=request.image_path,
+#             text_content=request.text_content,
+#             platform=request.platform,
+#             target_audience=request.target_audience
+#         )
+#         return {"success": True, "data": result}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():

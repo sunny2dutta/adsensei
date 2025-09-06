@@ -593,59 +593,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const requestData = generateImageSchema.parse(req.body);
       
-      // Generate image using OpenAI directly
-      const platformDimensions = {
-        instagram: "1024x1024",
-        instagram_story: "1024x1792", 
-        tiktok: "1024x1792",
-        facebook: "1792x1024",
-        pinterest: "1024x1792"
-      };
+      // Call Python service
+      const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
+      const response = await axios.post(`${pythonServiceUrl}/generate-ad-image`, requestData);
       
-      const stylePrompts = {
-        minimalist: "clean, minimal, simple composition, white space, modern",
-        luxury: "elegant, sophisticated, premium materials, gold accents, high-end",
-        street: "urban, edgy, graffiti-inspired, vibrant colors, contemporary",
-        sustainable: "natural, eco-friendly, green elements, organic textures",
-        bold: "vibrant colors, high contrast, dynamic composition, energetic"
-      };
-      
-      const style = requestData.style || "minimalist";
-      const platform = requestData.platform;
-      const enhancedPrompt = `${requestData.prompt}, ${stylePrompts[style]}, ${platform}-ready, advertising photography, professional quality, product photography style, commercial use, high resolution`;
-      
-      const openaiResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: enhancedPrompt,
-        size: platformDimensions[platform] as "1024x1024" | "1024x1792" | "1792x1024",
-        quality: "hd",
-        n: 1,
-      });
-      
-      const imageUrl = openaiResponse.data[0].url;
-      
-      // Return the generated image data
-      const result = {
-        image_path: null,
-        image_url: imageUrl,
-        platform: platform,
-        dimensions: {
-          width: parseInt(platformDimensions[platform].split('x')[0]),
-          height: parseInt(platformDimensions[platform].split('x')[1])
-        },
-        generation_time: 2.5,
-        metadata: {
-          original_prompt: requestData.prompt,
-          enhanced_prompt: enhancedPrompt,
-          style: style,
-          platform: platform
-        }
-      };
-      
-      res.json(result);
-      
+      if (response.data.success) {
+        res.json(response.data.data);
+      } else {
+        throw new Error("Python service returned error");
+      }
     } catch (error) {
-      console.error('Image generation error:', error);
       res.status(500).json({ message: "Error generating ad image: " + (error as Error).message });
     }
   });
