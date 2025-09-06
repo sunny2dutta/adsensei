@@ -80,6 +80,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Validate current session
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      // In this simple implementation, we'll check if we have a valid user ID in localStorage
+      // In a more complex app, you'd validate session tokens or cookies
+      const userId = req.headers['x-user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({ message: "No authentication found" });
+      }
+
+      const user = await storage.getUser(userId as string);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid session" });
+      }
+
+      // Don't send password hash to client
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Session validation error:", error);
+      res.status(401).json({ message: "Invalid session" });
+    }
+  });
+
   // Check if username/email exists (for validation)
   app.post("/api/auth/check-availability", async (req, res) => {
     try {

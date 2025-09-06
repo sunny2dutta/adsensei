@@ -55,7 +55,14 @@ function Router() {
       
       {/* Home route */}
       <Route path="/">
-        {!isLoading && isAuthenticated ? (
+        {isLoading ? (
+          <div className="min-h-screen bg-cream flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 bg-sage rounded-full animate-pulse mx-auto mb-4"></div>
+              <p className="text-charcoal/70">Loading...</p>
+            </div>
+          </div>
+        ) : isAuthenticated ? (
           <Redirect to="/dashboard" />
         ) : (
           <>
