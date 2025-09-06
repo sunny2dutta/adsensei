@@ -82,34 +82,21 @@ export default function CreateAd() {
   // Generate ad copy mutation
   const generateAdMutation = useMutation({
     mutationFn: async (data: AdCreationForm) => {
-      // Generate ad copy
-      const copyResponse = await apiRequest('POST', '/api/generate-ad-copy', {
-        brandType: 'fashion',
-        brandName: data.productName,
-        productCategory: 'Fashion',
-        targetAudience: data.targetAudience,
-        platform: data.platform,
-        campaignObjective: 'conversion',
-        brandValues: data.productDescription,
-        tone: data.brandVoice
+      // Generate ad image only
+      const imageResponse = await apiRequest('POST', '/api/generate-ad-image', {
+        prompt: `${data.productName}, ${data.productDescription}`,
+        platform: data.platform === 'meta' ? 'instagram' : data.platform,
+        style: 'minimalist'
       });
-      const adCopy = await copyResponse.json();
+      const adImage = await imageResponse.json();
       
-      // Generate ad image
-      let adImage = null;
-      try {
-        const imageResponse = await apiRequest('POST', '/api/generate-ad-image', {
-          prompt: `${data.productName}, ${data.productDescription}`,
-          platform: data.platform === 'meta' ? 'instagram' : data.platform,
-          text_overlay: adCopy.headline,
-          style: 'minimalist'
-        });
-        adImage = await imageResponse.json();
-      } catch (error) {
-        console.warn('Image generation failed, continuing with text only:', error);
-      }
-      
-      return { ...adCopy, image: adImage };
+      return { 
+        headline: data.productName,
+        body: data.productDescription, 
+        cta: "Shop Now",
+        platform: data.platform,
+        image: adImage 
+      };
     },
     onSuccess: (result: GeneratedAd) => {
       setGeneratedAd(result);
