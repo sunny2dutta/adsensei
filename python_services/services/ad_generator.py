@@ -5,7 +5,8 @@ import requests
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from typing import Dict, List, Optional, Any
 import openai
-from models.schemas import Platform, AdStyle, GeneratedAd, PLATFORM_SPECS
+from models.schemas import Platform, AdStyle, GeneratedAd, PLATFORM_SPECS, ProductImageRequest
+from services.logger import db_logger, log_performance_context
 
 class AdImageGenerator:
     def __init__(self):
@@ -13,6 +14,39 @@ class AdImageGenerator:
         self.output_dir = "generated_ads"
         os.makedirs(self.output_dir, exist_ok=True)
         
+    def create_product_prompt(self, request: ProductImageRequest) -> str:
+        """Create enhanced prompt from product details"""
+        base_prompt = f"{request.product_name} {request.product_description}"
+        
+        if request.key_features:
+            features_text = ", ".join(request.key_features)
+            base_prompt += f", featuring {features_text}"
+        
+        category_context = {
+            "electronics": "modern tech aesthetic, sleek design",
+            "fashion": "stylish, trendy, lifestyle photography",
+            "food": "appetizing, fresh, mouth-watering presentation",
+            "beauty": "elegant, luxurious, spa-like atmosphere",
+            "fitness": "energetic, dynamic, active lifestyle",
+            "home": "cozy, comfortable, lifestyle setting"
+        }
+        
+        category_suffix = category_context.get(request.product_category.lower(), "professional product photography")
+        
+        audience_context = {
+            "teenagers": "youthful, vibrant, social media friendly",
+            "young adults": "modern, aspirational, lifestyle focused",
+            "professionals": "sophisticated, premium, business oriented",
+            "families": "warm, inclusive, family-friendly atmosphere",
+            "seniors": "comfortable, trustworthy, accessible"
+        }
+        
+        audience_suffix = audience_context.get(request.target_audience.lower(), "appealing to general audience")
+        
+        enhanced_prompt = f"{base_prompt}, {category_suffix}, {audience_suffix}"
+        
+        return self.enhance_prompt_for_ads(enhanced_prompt, request.style, request.platform)
+
     def enhance_prompt_for_ads(self, prompt: str, style: AdStyle, platform: Platform) -> str:
         """Enhance the user prompt with style and platform-specific details"""
         style_prompts = {
@@ -30,7 +64,7 @@ class AdImageGenerator:
         
         return enhanced_prompt
 
-    async def generate_base_image(self, prompt: str, dimensions: Dict[str, int]) -> Image.Image:
+    async def generate_base_image(self, prompt: str, dimensions: Dict[str, int], request_id: str = "") -> Image.Image:
         """Generate base image using OpenAI DALL-E"""
         # DALL-E 3 supports 1024x1024, 1024x1792, or 1792x1024
         width, height = dimensions["width"], dimensions["height"]
@@ -44,29 +78,40 @@ class AdImageGenerator:
             dalle_size = "1792x1024"
         
         try:
-            response = self.openai_client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                size=dalle_size,
-                quality="hd",
-                n=1,
-            )
+            with log_performance_context(request_id, "dalle_api_call", model="dall-e-3", size=dalle_size):
+                response = self.openai_client.images.generate(
+                    model="dall-e-3",
+                    prompt=prompt,
+                    size=dalle_size,
+                    quality="hd",
+                    n=1,
+                )
             
             image_url = response.data[0].url
             
             # Download the image
-            img_response = requests.get(image_url)
-            img_response.raise_for_status()
-            
-            # Open and resize to exact dimensions if needed
-            image = Image.open(requests.get(image_url, stream=True).raw)
+            with log_performance_context(request_id, "image_download", url=image_url):
+                img_response = requests.get(image_url)
+                img_response.raise_for_status()
+                
+                # Open and resize to exact dimensions if needed
+                image = Image.open(requests.get(image_url, stream=True).raw)
             
             if image.size != (width, height):
-                image = self.resize_and_crop(image, width, height)
+                with log_performance_context(request_id, "image_resize", original_size=image.size, target_size=(width, height)):
+                    image = self.resize_and_crop(image, width, height)
             
             return image
             
         except Exception as e:
+            if request_id:
+                db_logger.log_error(
+                    request_id=request_id,
+                    error_type="DalleGenerationError",
+                    error_message=f"DALL-E generation failed: {str(e)}",
+                    endpoint="/generate-product-image",
+                    context={"prompt": prompt[:200], "dimensions": dimensions}
+                )
             print(f"DALL-E generation failed: {e}")
             # Fallback to solid color placeholder
             return Image.new('RGB', (width, height), color='lightblue')
@@ -187,7 +232,8 @@ class AdImageGenerator:
                               brand_colors: Optional[List[str]] = None,
                               text_overlay: Optional[str] = None,
                               style: Optional[AdStyle] = AdStyle.MINIMALIST,
-                              dimensions: Optional[Dict[str, int]] = None) -> GeneratedAd:
+                              dimensions: Optional[Dict[str, int]] = None,
+                              request_id: str = "") -> GeneratedAd:
         """Main method to generate a complete ad image"""
         start_time = time.time()
         
@@ -203,26 +249,45 @@ class AdImageGenerator:
             brand_colors = ["#000000", "#FFFFFF"]
         
         # Enhance prompt
-        enhanced_prompt = self.enhance_prompt_for_ads(prompt, style, platform)
+        with log_performance_context(request_id, "prompt_enhancement"):
+            enhanced_prompt = self.enhance_prompt_for_ads(prompt, style, platform)
         
         # Generate base image
-        image = await self.generate_base_image(enhanced_prompt, dimensions)
+        image = await self.generate_base_image(enhanced_prompt, dimensions, request_id)
         
         # Add text overlay
         if text_overlay:
-            image = self.add_text_overlay(image, text_overlay, brand_colors, platform)
+            with log_performance_context(request_id, "text_overlay_addition"):
+                image = self.add_text_overlay(image, text_overlay, brand_colors, platform)
         
         # Platform optimization
-        image = self.optimize_for_platform(image, platform)
+        with log_performance_context(request_id, "platform_optimization"):
+            image = self.optimize_for_platform(image, platform)
         
         # Save image
         image_id = str(uuid.uuid4())
         image_filename = f"{image_id}_{platform.value}.png"
         image_path = os.path.join(self.output_dir, image_filename)
         
-        save_result = self.save_optimized_image(image, image_path, platform)
+        with log_performance_context(request_id, "image_save_optimization"):
+            save_result = self.save_optimized_image(image, image_path, platform)
         
         generation_time = time.time() - start_time
+        
+        # Log successful generation
+        if request_id:
+            db_logger.log_performance(
+                request_id=request_id,
+                operation="complete_ad_generation",
+                duration_ms=generation_time * 1000,
+                metadata={
+                    "image_id": image_id,
+                    "platform": platform.value,
+                    "style": style.value,
+                    "has_text_overlay": bool(text_overlay),
+                    "optimization_result": save_result
+                }
+            )
         
         return GeneratedAd(
             image_path=image_path,
@@ -260,3 +325,20 @@ class AdImageGenerator:
             variations.append(variation)
         
         return variations
+
+    async def generate_product_image(self, request: ProductImageRequest, request_id: str = "") -> GeneratedAd:
+        """Generate ad image from product details"""
+        enhanced_prompt = self.create_product_prompt(request)
+        
+        spec = PLATFORM_SPECS[request.platform]
+        dimensions = {"width": spec["dimensions"][0], "height": spec["dimensions"][1]}
+        
+        return await self.generate_ad_image(
+            prompt=enhanced_prompt,
+            platform=request.platform,
+            brand_colors=request.brand_colors,
+            text_overlay=request.text_overlay,
+            style=request.style,
+            dimensions=dimensions,
+            request_id=request_id
+        )

@@ -67,6 +67,17 @@ class AdStyle(str, Enum):
     SUSTAINABLE = "sustainable"
     BOLD = "bold"
 
+class ProductImageRequest(BaseModel):
+    product_name: str
+    product_description: str
+    product_category: str
+    target_audience: Optional[str] = "general"
+    platform: Platform
+    text_overlay: Optional[str] = None
+    brand_colors: Optional[List[str]] = ["#000000", "#FFFFFF"]
+    style: Optional[AdStyle] = AdStyle.MINIMALIST
+    key_features: Optional[List[str]] = []
+
 class AdGenerationRequest(BaseModel):
     prompt: str
     platform: Platform
