@@ -40,6 +40,14 @@ interface GeneratedAd {
   cta: string;
   hashtags?: string[];
   platform: string;
+  image?: {
+    image_path: string;
+    image_url: string;
+    platform: string;
+    dimensions: { width: number; height: number };
+    generation_time: number;
+    metadata: any;
+  };
 }
 
 export default function CreateAd() {
@@ -74,7 +82,8 @@ export default function CreateAd() {
   // Generate ad copy mutation
   const generateAdMutation = useMutation({
     mutationFn: async (data: AdCreationForm) => {
-      const response = await apiRequest('POST', '/api/generate-ad-copy', {
+      // Generate ad copy
+      const copyResponse = await apiRequest('POST', '/api/generate-ad-copy', {
         brandType: 'fashion',
         brandName: data.productName,
         productCategory: 'Fashion',
@@ -84,7 +93,23 @@ export default function CreateAd() {
         brandValues: data.productDescription,
         tone: data.brandVoice
       });
-      return response.json();
+      const adCopy = await copyResponse.json();
+      
+      // Generate ad image
+      let adImage = null;
+      try {
+        const imageResponse = await apiRequest('POST', '/api/generate-ad-image', {
+          prompt: `${data.productName}, ${data.productDescription}`,
+          platform: data.platform === 'meta' ? 'instagram' : data.platform,
+          text_overlay: adCopy.headline,
+          style: 'minimalist'
+        });
+        adImage = await imageResponse.json();
+      } catch (error) {
+        console.warn('Image generation failed, continuing with text only:', error);
+      }
+      
+      return { ...adCopy, image: adImage };
     },
     onSuccess: (result: GeneratedAd) => {
       setGeneratedAd(result);
@@ -126,7 +151,7 @@ export default function CreateAd() {
           budget: Math.round(adData.budget * 100), // Convert to cents
           targetAudience: adData.targetAudience,
           adCopy: `${generatedAd.headline}\n\n${generatedAd.body}\n\n${generatedAd.cta}`,
-          imageUrl: null,
+          imageUrl: generatedAd.image?.image_url || null,
           expectedReach: null,
           duration: null,
         });
@@ -448,6 +473,21 @@ export default function CreateAd() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Display generated image if available */}
+                {generatedAd.image && generatedAd.image.image_url && (
+                  <div>
+                    <h3 className="font-semibold text-navy mb-2">Generated Ad Image</h3>
+                    <div className="bg-gray-100 rounded-lg p-4 text-center">
+                      <img 
+                        src={`http://localhost:8001${generatedAd.image.image_url}`}
+                        alt="Generated ad image"
+                        className="max-w-full h-auto mx-auto rounded-lg shadow-md"
+                        data-testid="img-generated-ad"
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <h3 className="font-semibold text-navy mb-2">Headline</h3>
                   <p className="text-lg font-medium">{generatedAd.headline}</p>
