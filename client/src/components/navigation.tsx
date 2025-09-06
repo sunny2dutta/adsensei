@@ -12,6 +12,7 @@ export default function Navigation() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/campaigns", label: "Campaigns" },
+    { href: "/products", label: "Products" },
     { href: "/templates", label: "Templates" },
     { href: "/analytics", label: "Analytics" },
     { href: "/clients", label: "Clients" },

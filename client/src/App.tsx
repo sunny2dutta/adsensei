@@ -10,6 +10,7 @@ import Campaigns from "@/pages/campaigns";
 import Templates from "@/pages/templates";
 import Analytics from "@/pages/analytics";
 import Clients from "@/pages/clients";
+import Products from "@/pages/products";
 import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 import Navigation from "@/components/navigation";
@@ -96,6 +97,11 @@ function Router() {
       <Route path="/clients">
         <ProtectedRoute>
           <Clients />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/products">
+        <ProtectedRoute>
+          <Products />
         </ProtectedRoute>
       </Route>
       
