@@ -479,11 +479,14 @@ export default function CreateAd() {
                     <h3 className="font-semibold text-navy mb-2">Generated Ad Image</h3>
                     <div className="bg-gray-100 rounded-lg p-4 text-center">
                       <img 
-                        src={`http://localhost:8001${generatedAd.image.image_url}`}
+                        src={generatedAd.image.image_url}
                         alt="Generated ad image"
                         className="max-w-full h-auto mx-auto rounded-lg shadow-md"
                         data-testid="img-generated-ad"
                       />
+                      <p className="text-xs text-gray-500 mt-2">
+                        {generatedAd.image.dimensions.width} × {generatedAd.image.dimensions.height} • {generatedAd.image.platform}
+                      </p>
                     </div>
                   </div>
                 )}
