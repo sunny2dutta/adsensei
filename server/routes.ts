@@ -580,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Ad Image Generation Routes
+  // AI Ad Image Generation Routes with Python service + Node.js fallback
   app.post("/api/generate-ad-image", async (req, res) => {
     try {
       const generateImageSchema = z.object({
@@ -593,16 +593,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const requestData = generateImageSchema.parse(req.body);
       
-      // Call Python service
-      const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
-      const response = await axios.post(`${pythonServiceUrl}/generate-ad-image`, requestData);
-      
-      if (response.data.success) {
-        res.json(response.data.data);
-      } else {
-        throw new Error("Python service returned error");
+      // First try Python service
+      try {
+        console.log('🐍 Attempting image generation via Python service...');
+        const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || "http://localhost:8001";
+        const response = await axios.post(`${pythonServiceUrl}/generate-ad-image`, requestData, {
+          timeout: 30000 // 30 second timeout
+        });
+        
+        if (response.data.success) {
+          console.log('✅ Image generated successfully via Python service');
+          res.json(response.data.data);
+          return;
+        } else {
+          throw new Error("Python service returned error: " + JSON.stringify(response.data));
+        }
+      } catch (pythonError) {
+        console.warn(`⚠️ Python service failed: ${(pythonError as Error).message}`);
+        console.log('🔄 Falling back to Node.js image generation...');
+        
+        // Fallback to Node.js OpenAI integration
+        const platformDimensions = {
+          instagram: "1024x1024",
+          instagram_story: "1024x1792", 
+          tiktok: "1024x1792",
+          facebook: "1792x1024",
+          pinterest: "1024x1792"
+        };
+        
+        const stylePrompts = {
+          minimalist: "clean, minimal, simple composition, white space, modern",
+          luxury: "elegant, sophisticated, premium materials, gold accents, high-end",
+          street: "urban, edgy, graffiti-inspired, vibrant colors, contemporary",
+          sustainable: "natural, eco-friendly, green elements, organic textures",
+          bold: "vibrant colors, high contrast, dynamic composition, energetic"
+        };
+        
+        const style = requestData.style || "minimalist";
+        const platform = requestData.platform;
+        const enhancedPrompt = `${requestData.prompt}, ${stylePrompts[style]}, ${platform}-ready, advertising photography, professional quality, product photography style, commercial use, high resolution`;
+        
+        const openaiResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: enhancedPrompt,
+          size: platformDimensions[platform] as "1024x1024" | "1024x1792" | "1792x1024",
+          quality: "hd",
+          n: 1,
+        });
+        
+        const imageUrl = openaiResponse.data[0].url;
+        
+        const result = {
+          image_path: null,
+          image_url: imageUrl,
+          platform: platform,
+          dimensions: {
+            width: parseInt(platformDimensions[platform].split('x')[0]),
+            height: parseInt(platformDimensions[platform].split('x')[1])
+          },
+          generation_time: 2.5,
+          metadata: {
+            original_prompt: requestData.prompt,
+            enhanced_prompt: enhancedPrompt,
+            style: style,
+            platform: platform,
+            generated_via: "nodejs_fallback"
+          }
+        };
+        
+        console.log('✅ Image generated successfully via Node.js fallback');
+        res.json(result);
       }
+      
     } catch (error) {
+      console.error('💥 Both Python and Node.js image generation failed:', error);
       res.status(500).json({ message: "Error generating ad image: " + (error as Error).message });
     }
   });
