@@ -811,6 +811,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Shopify products for a user
+  app.get("/api/shopify/products/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const products = await storage.getShopifyProducts(userId);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching products: " + (error as Error).message });
+    }
+  });
+
   app.post("/api/shopify/sync-products", async (req, res) => {
     try {
       const syncSchema = z.object({
@@ -873,16 +884,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createShopifyProduct(productData);
           syncCount++;
         } catch (productError) {
-          console.error(`Error syncing product ${product.id}:`, productError);
+          DatabaseLogger.error('shopify', `Error syncing product ${product.id}: ${(productError as Error).message}`);
         }
       }
 
+      DatabaseLogger.success('shopify', `Synced ${syncCount} products from Shopify store`);
       res.json({ 
         message: `Successfully synced ${syncCount} products`,
         syncCount,
         totalProducts: products.length
       });
     } catch (error) {
+      DatabaseLogger.error('shopify', `Error syncing products: ${(error as Error).message}`);
       res.status(500).json({ message: "Error syncing products: " + (error as Error).message });
     }
   });

@@ -336,7 +336,7 @@ export class MemStorage implements IStorage {
 
 import { DatabaseStorage } from './database-storage';
 
-// Use DatabaseStorage instead of MemStorage for production
+// Use DatabaseStorage for production with PostgreSQL
 export const storage = new DatabaseStorage();
 
 // Initialize the database with seed data

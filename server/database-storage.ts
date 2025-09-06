@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "./db";
-import { users, campaigns, templates, campaignMetrics, messages } from "@shared/schema";
+import { users, campaigns, templates, campaignMetrics, messages, shopifyProducts } from "@shared/schema";
 import type { 
   User, 
   InsertUser, 
@@ -11,7 +11,9 @@ import type {
   CampaignMetrics, 
   InsertCampaignMetrics, 
   Message, 
-  InsertMessage 
+  InsertMessage,
+  ShopifyProduct,
+  InsertShopifyProduct 
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 import bcrypt from "bcryptjs";
@@ -274,5 +276,39 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log("Database seeded with initial templates");
+  }
+
+  // Shopify Products
+  async getShopifyProduct(id: string): Promise<ShopifyProduct | undefined> {
+    const [product] = await db.select().from(shopifyProducts).where(eq(shopifyProducts.id, id));
+    return product || undefined;
+  }
+
+  async getShopifyProducts(userId: string): Promise<ShopifyProduct[]> {
+    return await db.select().from(shopifyProducts).where(eq(shopifyProducts.userId, userId));
+  }
+
+  async createShopifyProduct(insertProduct: InsertShopifyProduct): Promise<ShopifyProduct> {
+    const [product] = await db
+      .insert(shopifyProducts)
+      .values(insertProduct)
+      .returning();
+    
+    return product;
+  }
+
+  async updateShopifyProduct(id: string, updates: Partial<ShopifyProduct>): Promise<ShopifyProduct | undefined> {
+    const [product] = await db
+      .update(shopifyProducts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(shopifyProducts.id, id))
+      .returning();
+    
+    return product || undefined;
+  }
+
+  async deleteShopifyProduct(id: string): Promise<boolean> {
+    const result = await db.delete(shopifyProducts).where(eq(shopifyProducts.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
