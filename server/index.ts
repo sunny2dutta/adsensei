@@ -44,6 +44,9 @@ function startPythonService() {
 // Start Python service
 startPythonService();
 
+// Initialize log cleanup scheduler
+DatabaseLogger.initializeCleanup();
+
 // Setup security middleware first
 setupSecurity(app);
 

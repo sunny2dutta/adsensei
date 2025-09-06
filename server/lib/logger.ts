@@ -1,5 +1,6 @@
 import { db } from "../db";
 import { systemLogs, type InsertSystemLog } from "@shared/schema";
+import { lt } from "drizzle-orm";
 
 export class DatabaseLogger {
   private static async logToDatabase(logData: InsertSystemLog) {
@@ -84,5 +85,35 @@ export class DatabaseLogger {
 
   static async imageGenerationFailure(error: string) {
     await this.error('image_generation', `💥 Image generation failed: ${error}`);
+  }
+
+  // Cleanup old logs (older than 15 days)
+  static async cleanupOldLogs() {
+    try {
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+      
+      const result = await db
+        .delete(systemLogs)
+        .where(lt(systemLogs.timestamp, fifteenDaysAgo));
+        
+      if (result.rowCount && result.rowCount > 0) {
+        await this.info('system', `🧹 Cleaned up ${result.rowCount} old logs (older than 15 days)`);
+      }
+    } catch (error) {
+      console.error('Failed to cleanup old logs:', error);
+    }
+  }
+
+  // Initialize cleanup scheduler
+  static initializeCleanup() {
+    // Run cleanup on startup
+    this.cleanupOldLogs();
+    
+    // Schedule cleanup to run every 24 hours
+    setInterval(() => {
+      this.cleanupOldLogs();
+    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+    
+    this.info('system', '⏰ Log cleanup scheduler initialized (runs every 24 hours)');
   }
 }
